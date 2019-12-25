@@ -23,53 +23,95 @@ fieldWidth = 300
 fieldHeight = 400
 flag = 0
 tool = 0
-r = 10
+r = 4
 errSize = 10
+xStart = 0
+yStart = 0
+eraser = None
 
 
 def mouseDown(event):
-    global flag, tool, count
+    global flag, tool, count, xStart, yStart
 
     flag = 1
     penColor(100, 45, 0)
     brushColor(100, 45, 0)
     moveTo(event.x, event.y)
-    # circle(event.x, event.y, r)
-    # if tool == 3:
-    #     flag = 0
-    #     global circl
-    #     count += 1
-    #     k = []
-    #     k.append(circle(event.x, event.y, r))
-    #     k.append(event.x)
-    #     k.append(event.y)
-    #     figures[count] = k
-    #
-    #     print(figures)
+    xStart = event.x
+    yStart = event.y
 
 
-def mouseMove(event):
-    global flag, count
-    global tool
-    global errSize
-    penSize(1)
-    if flag == 1 and tool == 1:
-        count += 1
-        k = []
-        k.append(circle(event.x, event.y,r))
-        # k.append(lineTo(event.x, event.y))
-        k.append(event.x)
-        k.append(event.y)
-        figures.append(k)
-
-    if flag == 1 and tool == 2:
-        for fig in figures:
-            if (abs(event.x - fig[1]) < errSize) and (abs(event.y - fig[2]) < errSize):
+def erMove(x, y):
+    global count
+    brushColor(0, 150, 0)
+    moveObjectTo(eraser, x, y)
+    for fig in figures:
+        # print(fig[0])
+        try:
+            xCeOb, yCeOb = center(fig[0])
+            if abs(x + errSize - xCeOb) < errSize and abs(y + errSize - yCeOb) < errSize:
                 if count > 0:
                     deleteObject(fig[0])
                     figures.remove(fig)
                     count -= 1
-                break
+        except:
+            print(fig[0])
+
+
+def penMove(x, y):
+    global count
+
+    x1 = xStart
+    y1 = yStart
+    x2 = x
+    y2 = y
+    step = 1
+    if abs(x2 - x1) > abs(y2 - y1):
+        fl = 0
+        if xStart < x:
+            myRange = range(xStart, x, step)
+        else:
+            myRange = range(x, xStart, step)
+    else:
+        fl = 1
+        if yStart < y:
+            myRange = range(yStart, y, step)
+        else:
+            myRange = range(y, yStart, step)
+    for x in myRange:
+        # y = int(((x1 * y2 - x2 * y1) + (y1 - y2) * x) / (x1 - x2))
+        if fl == 0:
+            xx = x
+            yy = int(((x1 * y2 - x2 * y1) + (y1 - y2) * x) / (x1 - x2))
+        else:
+            yy = x
+            xx = int(((x1 * y2 - x2 * y1) + (x2 - x1) * yy) / (y2 - y1))
+    # if True:
+    #     xx = x
+    #     yy = y
+        if True:
+            count += 1
+            k = []
+            k.append(circle(xx, yy, r))
+            k.append(xx)
+            k.append(yy)
+            figures.append(k)
+
+
+def mouseMove(event):
+    global flag, count, xStart, yStart, eraser
+    global tool
+    global errSize
+    penSize(1)
+    if tool == 2:
+        moveObjectTo(eraser, event.x, event.y)
+    if flag == 1 and tool == 1:
+        penMove(event.x, event.y)
+    if flag == 1 and tool == 2:
+        erMove(event.x, event.y)
+
+    xStart = event.x
+    yStart = event.y
 
 
 def mouseUp(event):
@@ -87,17 +129,21 @@ def btnPenClick():
     print('Pen')
     global tool
     tool = 1
+    moveObjectTo(eraser, -100, -100)
 
 
 def btnHandClick():
     print('Hand')
     global tool
     tool = 0
+    moveObjectTo(eraser, -100, -100)
 
 
 def btnErrClick():
-    global tool
+    global tool, eraser
     tool = 2
+    brushColor(249, 255, 79)
+    eraser = circle(-100, -100, errSize)
 
 
 def btnFigClick():
@@ -121,7 +167,7 @@ def btnTmpClick():
 
 
 def main(self=None):
-    global lbl
+    global lbl, eraser
 
     canvasPos(0, 5)
     canvasSize(fieldWidth, fieldHeight)
@@ -141,6 +187,9 @@ def main(self=None):
     btnFig.grid(row=1, column=5)
     btnTmp = Button(text="", command=btnTmpClick)
     btnTmp.grid(row=1, column=6)
+
+    brushColor(249, 255, 79)
+    eraser = circle(-100, -100, errSize)
 
     onKey(keyPressed)
 
