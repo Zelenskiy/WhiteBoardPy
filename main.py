@@ -28,6 +28,7 @@ errSize = 10
 xStart = 0
 yStart = 0
 eraser = None
+pen = None
 
 
 def mouseDown(event):
@@ -39,6 +40,7 @@ def mouseDown(event):
     moveTo(event.x, event.y)
     xStart = event.x
     yStart = event.y
+
 
 
 def erMove(x, y):
@@ -86,9 +88,9 @@ def penMove(x, y):
         else:
             yy = x
             xx = int(((x1 * y2 - x2 * y1) + (x2 - x1) * yy) / (y2 - y1))
-    # if True:
-    #     xx = x
-    #     yy = y
+        # if True:
+        #     xx = x
+        #     yy = y
         if True:
             count += 1
             k = []
@@ -105,6 +107,8 @@ def mouseMove(event):
     penSize(1)
     if tool == 2:
         moveObjectTo(eraser, event.x, event.y)
+    if tool == 1:
+        moveObjectTo(pen, event.x, event.y)
     if flag == 1 and tool == 1:
         penMove(event.x, event.y)
     if flag == 1 and tool == 2:
@@ -116,8 +120,10 @@ def mouseMove(event):
 
 def mouseUp(event):
     global flag
-    global tool
+    global tool,pen
     flag = 0
+
+
 
 
 def keyPressed(event):
@@ -127,23 +133,25 @@ def keyPressed(event):
 
 def btnPenClick():
     print('Pen')
-    global tool
+    global tool, eraser, pen
     tool = 1
     moveObjectTo(eraser, -100, -100)
+    moveObjectTo(pen, -100, -100)
 
 
 def btnHandClick():
     print('Hand')
-    global tool
+    global tool, eraser, pen
     tool = 0
     moveObjectTo(eraser, -100, -100)
-
+    moveObjectTo(pen, -100, -100)
 
 def btnErrClick():
-    global tool, eraser
+    global tool, eraser, pen
     tool = 2
     brushColor(249, 255, 79)
     eraser = circle(-100, -100, errSize)
+    moveObjectTo(pen, -100, -100)
 
 
 def btnFigClick():
@@ -158,19 +166,15 @@ def btnScrClick():
 
 
 def btnTmpClick():
-    global count
-    if count > 0:
-        deleteObject(figures[count][0])
-        del figures[count]
-        count -= 1
-        # print(figures)
+    pass
 
 
 def main(self=None):
-    global lbl, eraser
+    global lbl, eraser, pen,  _C
 
     canvasPos(0, 5)
     canvasSize(fieldWidth, fieldHeight)
+
 
     windowSize(fieldWidth + 2, fieldHeight + 27)
 
@@ -190,6 +194,9 @@ def main(self=None):
 
     brushColor(249, 255, 79)
     eraser = circle(-100, -100, errSize)
+    p = [(0, 0), (11, 5), (26, 18), (21, 24), (7, 11)]
+    pen = polygon(p)
+    moveObjectTo(pen,-100,-100)
 
     onKey(keyPressed)
 
