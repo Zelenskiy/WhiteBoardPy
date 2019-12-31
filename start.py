@@ -1,7 +1,13 @@
+import numpy as np
 from tkinter import *
 from tkinter import colorchooser, LAST
+from datetime import datetime
 
-from PIL import ImageTk
+import pyautogui
+from PIL import ImageTk, Image
+import pickle
+import imutils
+import cv2
 
 from draw import *
 
@@ -40,7 +46,7 @@ elif platform == "linux":
     VK_RETURN = 0x24  # RETURN key
     VK_ESCAPE = 0x09  # ESC key
 
-grList=[]
+grList = []
 errSize = 10
 figures = []
 canvases = []
@@ -58,15 +64,137 @@ cLine0 = None
 penWidth = 2
 penColor = "#0000FF"
 btnActiveColor = "#331177"
-brushStyle = ""
+brushColor = ""
 lineArrow = ''
 lineDot = ''
 gridColor = "#D0D0D0"
-canvas_width  = 0
+canvas_width = 0
 canvas_height = 0
+fonColor = "#E9FBCA"
+screen_width = 0
+screen_height = 0
+root = None
+selFig = {}
 
 xc = 0
 yc = 0
+
+
+def btnScrClick(w):
+    global screen_width, screen_height, canvas, figures
+
+    def btnClick():
+        print('btnClick')
+        width = 600
+        x0 = 500
+        y0 = 10
+        # floatWindow.geometry('+{}+{}'.format(-100, -100))
+        # floatWindow.geometry("40x35+100+100")
+        name = 'tmp/' + datetime.strftime(datetime.now(), "%Y_%m_%d_%H_%M_%S") + '.png'
+        image = pyautogui.screenshot(region=(0, 0, screen_width, screen_height + 75))
+        image.save(name)
+        k = screen_width / (screen_height + 75)
+        height = int(width / k)
+        image = image.resize((width, height), Image.ANTIALIAS)
+        w.wm_state('normal')
+        w.output = ImageTk.PhotoImage(image)
+        im = canvas.create_image(x0, y0, image=w.output, state=NORMAL, anchor=NW)
+        canvas.update()
+        floatWindow.destroy()
+        # canvas.create_window(20, 20)
+        k = []
+        c = {}
+        c['name'] = name
+        c['x'] = x0
+        c['y'] = y0
+        c['width'] = width
+        c['height'] = height
+        k.append(im)
+        k.append("image")
+        k.append(c)
+        figures.append(k)
+        print(figures)
+
+    print('btnScrClick')
+    w.wm_state('iconic')
+    floatWindow = Tk()
+    floatWindow.geometry("40x35+20+20")
+    # floatWindow.wm_state('icon')
+    # window without border
+
+    btn = Button(floatWindow, text='Sr', command=btnClick)
+    # btn.config(bg='systemTransparent')
+
+    floatWindow.overrideredirect(1)
+    floatWindow.wm_attributes("-topmost", True)
+
+    # floatWindow.attributes("-transparentcolor", "white")
+
+    btn.pack(fill=BOTH, expand=True)
+
+    # w.wm_state('normal')
+
+
+def save():
+    global figures, penColor, brushColor, penWidth, fonColor, canvas_width, canvas_height, xc, yc
+    data = {}
+    data['figures'] = figures
+    data['penColor'] = penColor
+    data['brushColor'] = brushColor
+    data['penWidth'] = penWidth
+    data['fonColor'] = fonColor
+    data['canvas_width'] = canvas_width
+    data['canvas_height'] = canvas_height
+    data['xc'] = xc
+    data['yc'] = yc
+
+    with open("test.wb", "wb") as fp:
+        pickle.dump(data, fp)
+
+
+def load(canv, root):
+    global figures, penColor, brushColor, penWidth, fonColor, canvas_width, canvas_height, xc, yc, \
+        grList, selFig, tool
+    canv.delete(ALL)
+    figures = []
+    #selFig = {}
+    tool = 1
+
+    with open("test.wb", "rb") as fp:  # Unpickling
+        data = pickle.load(fp)
+    figures = data['figures']
+    penColor = data['penColor']
+    brushColor = data['brushColor']
+    penWidth = data['penWidth']
+    fonColor = data['fonColor']
+    canvas_width = data['canvas_width']
+    canvas_height = data['canvas_height']
+    xc = data['xc']
+    yc = data['yc']
+    # change size and position canvas
+    canv.place(x=xc, y=yc)
+    canv.config(width=canvas_width, height=canvas_height)
+    grid(canvas, gridColor, canvas_width + 50, canvas_height + 50, 50, grList)
+
+    for fig in figures:
+        f = fig[2]
+        if fig[1] == 'oval':
+            fig[0] = canv.create_oval(f['x1'], f['y1'], f['x2'], f['y2'], outline=f['outline'],
+                                      fill=f['fill'], width=f['width'])
+        elif fig[1] == 'line':
+            canv.create_line(f['x1'], f['y1'], f['x2'], f['y2'], width=f['width'], fill=f['fill'],
+                             arrow=f['arrow'], dash=f['dash'])
+        elif fig[1] == 'rectangle':
+            fig[0] = canv.create_polygon(f['x1'], f['y1'], f['x2'], f['y2'], f['x3'], f['y3'], f['x4'], f['y4'],
+                                         width=f['width'], fill=f['fill'],
+                                         outline=f['outline'])
+        elif fig[1] == 'image':
+            width = f['width']
+            height = f['height']
+            image = Image.open(f['name'])
+            image = image.resize((width, height), Image.ANTIALIAS)
+            root.output = ImageTk.PhotoImage(image)
+            fig[0] = canv.create_image(f['x'], f['y'], image=root.output, state=NORMAL, anchor=NW)
 
 
 def f_quit(event):
@@ -75,30 +203,64 @@ def f_quit(event):
 
 
 def mouseDown(event):
-    global flag
-    flag = 1
+    global selFig, canvas, figures
+    if tool == 8:
+        # select object
+
+        for fig in figures:
+            x1, y1, x2, y2 = coords(canvas, fig[0])
+            if (event.x > x1) and (event.x < x2) and (event.y > y1) and (event.y < y2):
+                if selFig == {}:
+                    pass
+                else:
+                    canvas.coords(selFig['0'], x1 - 1, y1 - 1, x2 + 1, y2 + 1)
+                    canvas.coords(selFig['SE'], x2 - 10, y2 - 10, x2 + 10, y2 + 10)
+
+                    # canvas.coords(selFig['NW'], x1 - 10, y1 - 10, x1 + 10, y1 + 10)
+                    # canvas.coords(selFig['NE'], x2 - 10, y1 - 10, x2 + 10, y1 + 10)
+                    # canvas.coords(selFig['SW'], x1 - 10, y2 - 10, x1 + 10, y2 + 10)
+                    # canvas.coords(selFig['S'], abs(x1 + x2) // 2 - 10, y2 - 10, abs(x1 + x2) // 2 + 10, y2 + 10)
+                    # canvas.coords(selFig['E'], x2 - 10, abs(y1 + y2) // 2 - 10, x2 + 10, abs(y1 + y2) // 2 + 10)
+
+                    selFig['Obj'] = fig
+                fl = True
+                print("selFig ->", selFig)
+                print("LEN ->", len(selFig))
+                break
+
+
+    # repeat code
+    if tool == 8:
+        # change cursor
+        print (selFig)
+        if selFig['0'] != None:
+            try:
+                x1, y1, x2, y2 = coords(canvas, selFig['0'])
+                if (event.x > x1) and (event.x < x2) and (event.y > y1) and (event.y < y2):
+                    canvas.config(cursor="fleur")
+                else:
+                    canvas.config(cursor="tcross")
+            except:
+                pass
+    if not fl:
+        pass
+        #selFig = {}
 
 
 def mouseMove(event):
-    global flag, count, xStart, yStart, eraser, tool, errSize, color, canvas, xc, yc, line0, \
-        xLineStart, yLineStart, cLine0, penWidth, penColor
+    global count, xStart, yStart, eraser, tool, errSize, color, canvas, xc, yc, line0, \
+        xLineStart, yLineStart, cLine0, penWidth, penColor, selFig, selObj
+
     if xStart == 0 and yStart == 0 and tool != 3 and tool != 4:
         xStart = event.x
         yStart = event.y
 
-    # penSize(1)
-    if tool == 2:
-        pass
-        # moveObjectTo(eraser, event.x, event.y)
     if tool == 1:
-        pass
-        # moveObjectTo(pen, event.x, event.y)
-    if flag == 1 and tool == 1:
         penMove(penColor, xStart, yStart, penWidth, canvas, figures, event.x, event.y)
 
-    if flag == 1 and tool == 2:
+    elif tool == 2:
         erMove(errSize, canvas, figures, event.x, event.y)
-    if flag == 1 and tool == 7:
+    elif tool == 7:
         dx = event.x - xStart
         dy = event.y - yStart
         xc += dx
@@ -110,9 +272,9 @@ def mouseMove(event):
         canvas.place(x=xc, y=yc)
         if xc + (0) > 0:
             pass
-    #     TODO доробить збільшення полотна при витягуванні вліво та вгору
+    #     TODO make for expanding if drag canvas out borger
 
-    if flag == 1 and tool == 3:
+    elif tool == 3:
         if xStart == 0 and yStart == 0:
             xLineStart = event.x
             yLineStart = event.y
@@ -130,19 +292,18 @@ def mouseMove(event):
 
         else:
             canvas.coords(line0, xLineStart, yLineStart, event.x, event.y)
-            cLine0 = {}
             cLine0['x1'] = xLineStart
             cLine0['y1'] = yLineStart
             cLine0['x2'] = event.x
             cLine0['y2'] = event.y
 
-    if flag == 1 and tool == 4:
+    elif tool == 4:
         if xStart == 0 and yStart == 0:
             xLineStart = event.x
             yLineStart = event.y
             line0 = canvas.create_polygon([xLineStart, yLineStart], [xLineStart, yLineStart], [xLineStart, yLineStart],
                                           [xLineStart, yLineStart],
-                                          width=penWidth, outline=penColor, fill=brushStyle)
+                                          width=penWidth, outline=penColor, fill=brushColor)
             cLine0 = {}
         else:
             canvas.coords(line0, xLineStart, yLineStart, xLineStart, event.y, event.x, event.y, event.x, yLineStart)
@@ -150,19 +311,84 @@ def mouseMove(event):
             cLine0['x1'] = xLineStart
             cLine0['y1'] = yLineStart
             cLine0['x2'] = event.x
-            cLine0['y2'] = event.y
+            cLine0['y2'] = yLineStart
+            cLine0['x3'] = event.x
+            cLine0['y3'] = event.y
+            cLine0['x4'] = xLineStart
+            cLine0['y4'] = event.y
+
             cLine0['width'] = penWidth
             cLine0['outline'] = penColor
-            cLine0['fill'] = brushStyle
+            cLine0['fill'] = brushColor
+    elif tool == 8:
+        # draging figure
+        print(selFig['Obj'][1])
+        if selFig['Obj'][1] == 'rectangle':
+            x1 = selFig['Obj'][2]['x1']
+            y1 = selFig['Obj'][2]['y1']
+            x2 = selFig['Obj'][2]['x2']
+            y2 = selFig['Obj'][2]['y2']
+            x3 = selFig['Obj'][2]['x3']
+            y3 = selFig['Obj'][2]['y3']
+            x4 = selFig['Obj'][2]['x4']
+            y4 = selFig['Obj'][2]['y4']
+            dx = event.x - xStart
+            dy = event.y - yStart
+            selFig['Obj'][2]['x1'] = x1 + dx
+            selFig['Obj'][2]['y1'] = y1 + dy
+            selFig['Obj'][2]['x2'] = x2 + dx
+            selFig['Obj'][2]['y2'] = y2 + dy
+            selFig['Obj'][2]['x3'] = x3 + dx
+            selFig['Obj'][2]['y3'] = y3 + dy
+            selFig['Obj'][2]['x4'] = x4 + dx
+            selFig['Obj'][2]['y4'] = y4 + dy
+            moveObjectBy(canvas, selFig['Obj'][0], dx, dy)
+        elif selFig['Obj'][1] == 'line':
+            x1 = selFig['Obj'][2]['x1']
+            y1 = selFig['Obj'][2]['y1']
+            x2 = selFig['Obj'][2]['x2']
+            y2 = selFig['Obj'][2]['y2']
+            dx = event.x - xStart
+            dy = event.y - yStart
+            selFig['Obj'][2]['x1'] = x1 + dx
+            selFig['Obj'][2]['y1'] = y1 + dy
+            selFig['Obj'][2]['x2'] = x2 + dx
+            selFig['Obj'][2]['y2'] = y2 + dy
+            moveObjectBy(canvas, selFig['Obj'][0], dx, dy)
+
+    if tool != 8:
+        if selFig != {}:
+            canvas.coords(selFig, 100000, 100000, 1000001, 100001)
+            #selFig = {}
 
     xStart = event.x
     yStart = event.y
 
 
+def mouseMoveNoButton(event):
+    global selFig , tool
+    if tool == 8:
+        # change cursor
+        try:
+
+            if not selFig['Obj'] is None:
+                x1, y1, x2, y2 = coords(canvas, selFig['0'])
+                if (event.x > x1) and (event.x < x2) and (event.y > y1) and (event.y < y2):
+                    canvas.config(cursor="fleur")
+                else:
+                    canvas.config(cursor="tcross")
+        except:
+            pass
+
+
+
+
+
 def mouseUp(event):
-    global xStart, yStart, cLine0, line0, xLineStart, yLineStart
+    global xStart, yStart, cLine0, line0, xLineStart, yLineStart, selFig
     xStart = 0
     yStart = 0
+    fl = False
     if tool == 3 or tool == 4:
         k = []
         k.append(line0)
@@ -173,6 +399,49 @@ def mouseUp(event):
         k.append(cLine0)
         figures.append(k)
         print(figures)
+
+    # if tool == 8:
+    #     # select object
+    #
+    #     for fig in figures:
+    #         x1, y1, x2, y2 = coords(canvas, fig[0])
+    #         if (event.x > x1) and (event.x < x2) and (event.y > y1) and (event.y < y2):
+    #             # deleteObject(canvas, selFig)
+    #             if selFig == {}:
+    #                 pass
+    #                 # makeSelFig(10000, 10000, 10001, 10001, fig)
+    #             else:
+    #                 canvas.coords(selFig['0'], x1 - 1, y1 - 1, x2 + 1, y2 + 1)
+    #                 # canvas.coords(selFig['NW'], x1 - 10, y1 - 10, x1 + 10, y1 + 10)
+    #                 # canvas.coords(selFig['NE'], x2 - 10, y1 - 10, x2 + 10, y1 + 10)
+    #                 canvas.coords(selFig['SE'], x2 - 10, y2 - 10, x2 + 10, y2 + 10)
+    #                 # canvas.coords(selFig['SW'], x1 - 10, y2 - 10, x1 + 10, y2 + 10)
+    #                 # canvas.coords(selFig['S'], abs(x1 + x2) // 2 - 10, y2 - 10, abs(x1 + x2) // 2 + 10, y2 + 10)
+    #                 # canvas.coords(selFig['E'], x2 - 10, abs(y1 + y2) // 2 - 10, x2 + 10, abs(y1 + y2) // 2 + 10)
+    #
+    #                 selFig['Obj'] = fig
+    #             fl = True
+    #             print("selFig ->", selFig)
+    #             print("LEN ->", len(selFig))
+    #             break
+    #
+    #
+    # # repeat code
+    # if tool == 8:
+    #     # change cursor
+    #     print (selFig)
+    #     if selFig['0'] != None:
+    #         try:
+    #             x1, y1, x2, y2 = coords(canvas, selFig['0'])
+    #             if (event.x > x1) and (event.x < x2) and (event.y > y1) and (event.y < y2):
+    #                 canvas.config(cursor="fleur")
+    #             else:
+    #                 canvas.config(cursor="tcross")
+    #         except:
+    #             pass
+    # if not fl:
+    #     pass
+    #     #selFig = {}
     xLineStart = 0
     yLineStart = 0
 
@@ -180,8 +449,23 @@ def mouseUp(event):
 def create_canvas(frame):
     canvases.append(Canvas(frame))
 
+def makeSelFig(x1, y1, x2, y2, Obj):
+    global canvas, selFig
+    #selFig = {}
+    selFig['0'] = canvas.create_rectangle(x1 - 1, y1 - 1, x2 + 1, y2 + 1, width=1, outline="red", dash=(5,5))
+    # selFig['0'].config(cursor="fleur")
+    # selFig['NW'] = canvas.create_oval(x1 - 10, y1 - 10, x1 + 10, y1 + 10, width=1, outline="red",                                      fill="yellow")
+    # selFig['NE'] = canvas.create_oval(x2 - 10, y1 - 10, x2 + 10, y1 + 10, width=1, outline="red",                                      fill="yellow")
+    selFig['SE'] = canvas.create_oval(x2 - 10, y2 - 10, x2 + 10, y2 + 10, width=1, outline="red",
+                                      fill="yellow")
+    # selFig['SW'] = canvas.create_oval(x1 - 10, y2 - 10, x1 + 10, y2 + 10, width=1, outline="red",                                      fill="yellow")
+    # selFig['S'] = canvas.create_rectangle(abs(x1 + x2) // 2 - 10, y2 - 10, abs(x1 + x2) // 2 + 10,                                     y2 + 10, width=1, outline="red", fill="yellow")
+    # selFig['E'] = canvas.create_rectangle(x2 - 10, abs(y1 + y2) // 2 - 10, x2 + 10,                                          abs(y1 + y2) // 2 + 10, width=1, outline="red", fill="yellow")
+    selFig['Obj'] = Obj
+
+
 def expanse(d):
-    global canvas, canvas_width, canvas_height,xc,yc
+    global canvas, canvas_width, canvas_height, xc, yc
     if d == 'u':
         canvas_height += 100
         yc -= 100
@@ -191,12 +475,14 @@ def expanse(d):
     canvas.config(width=canvas_width, height=canvas_height)
     canvas.place(x=xc, y=yc)
 
+
 def noSelectAll(frame1):
     for associated_widget in frame1.winfo_children():
         associated_widget.configure(bg='white')
 
+
 def main():
-    global canvas, color, canvas_width, canvas_height
+    global canvas, color, canvas_width, canvas_height, screen_width, screen_height, selFig
     root = Tk()
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight() - 75
@@ -204,28 +490,40 @@ def main():
     root.title("WhiteBoard")
     frame = Frame(root, relief=RAISED, borderwidth=1)
     frame.pack(fill=BOTH, expand=True)
-    canvas = Canvas(frame, bg="#E9FBCA")
-    canvas_width  = screen_width + 50
+    canvas = Canvas(frame, bg=fonColor)
+    canvas_width = screen_width + 50
     canvas_height = screen_height + 50
     canvas.place(x=xc, y=yc)
     canvas.config(width=canvas_width, height=canvas_height)
     canvas.config(cursor="tcross")
     grid(canvas, gridColor, screen_width + 50, screen_height + 50, 50, grList)
+    # Кнопки розширення полотна
     btnDown = Button(text='V', width=4, height=1, command=lambda: expanse('u'))
-    btnDown.place(x=screen_width // 2, y=screen_height - 60)
     btnRight = Button(text='>', width=2, height=2, command=lambda: expanse('r'))
-    btnRight.place(x=screen_width - 25, y=screen_height //2)
+
+    btnDown.place(x=screen_width // 2, y=screen_height - 60)
+    btnRight.place(x=screen_width - 25, y=screen_height // 2)
+
     frame1 = Frame(frame, relief=RAISED, borderwidth=1)
     frame1.pack(side=BOTTOM, fill=BOTH)
-    images_path = (
-    "img/pen.png", "img/err.gif", "img/hand.png", "img/line.png", "img/ClearFill.png", "img/_ClearFill.png",
-    "img/palitra.png", "img/width.png", "img/line 2px.png", "img/line 4px.png", "img/line 8px.png",
-    "img/line 12px.png", "img/line 16px.png", "img/line 20px.png", "img/line 24px.png", "img/arr.png",
-    "img/line 2px.png", "img/lineArr.png", "img/bothArr.png", "img/dot.png", "img/line 2px.png",
-    "img/punktir.png", "img/shtrLine.png")
+    images_path = {
+        0: "img/pen.png", 1: "img/err.gif", 2: "img/hand.png", 3: "img/line.png", 4: "img/ClearFill.png",
+        5: "img/_ClearFill.png", 6: "img/palitra.png", 7: "img/width.png", 8: "img/line 2px.png",
+        9: "img/line 4px.png", 10: "img/line 8px.png", 11: "img/line 12px.png", 12: "img/line 16px.png",
+        13: "img/line 20px.png", 14: "img/line 24px.png", 15: "img/arr.png", 16: "img/line 2px.png",
+        17: "img/lineArr.png", 18: "img/bothArr.png", 19: "img/dot.png", 20: "img/line 2px.png",
+        21: "img/punktir.png", 22: "img/shtrLine.png", 23: "img/options.png", 24: "img/open.png",
+        25: "img/save.png", 26: "img/shot.png", 27: "img/add.png", 28: "img/ar.png", }
     images = []
     for i in images_path:
-        images.append(ImageTk.PhotoImage(file=i))
+        images.append(ImageTk.PhotoImage(file=images_path[i]))
+
+    def on_move_or_resize():
+        # If windows is resizing
+        w = root.winfo_width()
+        h = root.winfo_height()
+        btnDown.place(x=w // 2, y=h - 60)
+        btnRight.place(x=w - 25, y=h // 2)
 
 
     def btnHandClick():
@@ -234,6 +532,14 @@ def main():
         tool = 7
         noSelectAll(frame1)
         btnHand.config(bg=btnActiveColor)
+        deleteSelectionLinks()
+
+    def btnAddPageClick(root):
+        global selFig
+        print('Add Page')
+        deleteSelectionLinks()
+        print("selFig ->", selFig)
+        print("LEN ->", len(selFig))
 
     def btnLineClick():
         print('Line')
@@ -241,6 +547,8 @@ def main():
         tool = 3
         noSelectAll(frame1)
         btnLine.config(bg=btnActiveColor)
+        deleteSelectionLinks()
+
 
     def btnErClick():
         print('Erazer')
@@ -248,62 +556,110 @@ def main():
         tool = 2
         noSelectAll(frame1)
         btnEr.config(bg=btnActiveColor)
+        deleteSelectionLinks()
+
 
     def btnRectClick():
         print('Rect')
         global tool
-        global tool, brushStyle
+        global tool, brushColor
         if tool == 4:
-            if brushStyle == penColor:
-                brushStyle = ""
+            if brushColor == penColor:
+                brushColor = ""
                 btnRect.config(image=images[5])
             else:
-                brushStyle = penColor
+                brushColor = penColor
                 btnRect.config(image=images[4])
         print('Pen')
         tool = 4
         noSelectAll(frame1)
         btnRect.config(bg=btnActiveColor)
+        deleteSelectionLinks()
+
+        #selFig = {}
+
+    def deleteSelectionLinks():
+        global selFig, canvas
+        deleteObject(canvas, selFig['0'])
+        # deleteObject(canvas, selFig['NW'])
+        # deleteObject(canvas, selFig['NE'])
+        deleteObject(canvas, selFig['SE'])
+        # deleteObject(canvas, selFig['SW'])
+        # deleteObject(canvas, selFig['S'])
+        # deleteObject(canvas, selFig['E'])
+
 
     def btnPenClick():
         global tool
         tool = 1
         noSelectAll(frame1)
         btnPen.config(bg=btnActiveColor)
+        deleteSelectionLinks()
+
+    def btnArClick():
+        global tool, selFig
+        tool = 8
+        noSelectAll(frame1)
+        btnAr.config(bg=btnActiveColor)
+        deleteSelectionLinks()
+        makeSelFig(10000, 10000, 10001, 10001, None)
 
     def btnColorSelectClick():
-        print("Вибір кольору")
+        print("Select color")
         global penColor
         penColor = colorchooser.askcolor()[1]
+        deleteSelectionLinks()
 
     def widthClick(d):
         global penWidth
         penWidth = d
         frameWidth.pack_forget()
+        deleteSelectionLinks()
 
     def arrowClick(d):
         global lineArrow
         lineArrow = d
         frameArrow.pack_forget()
+        deleteSelectionLinks()
 
     def dotClick(d):
-        global lineDot
+        global lineDot, selFig
         lineDot = d
         frameDot.pack_forget()
+        deleteSelectionLinks()
+
 
     def btnWidthSelectClick():
-        print("Вибір товщини")
+        print("Select width")
         global penWidth
         frameWidth.pack(side=LEFT, padx=2, pady=2)
+        deleteSelectionLinks()
+
+    def btnOptionsClick():
+        print("Settings")
+        frameOptions.pack(side=LEFT, padx=2, pady=2)
+        deleteSelectionLinks()
 
     def btnArrowSelectClick():
-        print("Вибір стрілок")
+        print("Select arrow")
         frameArrow.pack(side=LEFT, padx=2, pady=2)
+        deleteSelectionLinks()
 
     def btnDotSelectClick():
-        print("Вибір штриховки")
+        print("Select dash")
         frameDot.pack(side=LEFT, padx=2, pady=2)
+        deleteSelectionLinks()
+        # image = pyautogui.screenshot(region=(0, 0, screen_width, screen_height))
+        #
+        # image = ImageTk.PhotoImage(image)
+        # root.image = image
+        # im = canvas.create_image(50, 10, image=image, state=NORMAL, anchor=NW)
+        # canvas.create_line(22,33,444,444)
+        # canvas.update()
 
+    # Buttons for main panel
+    btnAr = Button(frame1, image=images[28], command=btnArClick, font="10")
+    btnAr.pack(side=LEFT, padx=2, pady=2)
     btnPen = Button(frame1, image=images[0], command=btnPenClick, font="10")
     btnPen.pack(side=LEFT, padx=2, pady=2)
     btnEr = Button(frame1, image=images[1], command=btnErClick, font="10")
@@ -314,6 +670,14 @@ def main():
     btnLine.pack(side=LEFT, padx=2, pady=2)
     btnRect = Button(frame1, image=images[5], command=btnRectClick, font="10")
     btnRect.pack(side=LEFT, padx=2, pady=2)
+    btnOptions = Button(frame1, image=images[23], command=btnOptionsClick, font="10")
+    btnOptions.pack(side=LEFT, padx=2, pady=2)
+    btnScr = Button(frame1, image=images[26], command=lambda: btnScrClick(root), font="10")
+    btnScr.pack(side=LEFT, padx=2, pady=2)
+    btnAddPage = Button(frame1, image=images[27], command=lambda: btnAddPageClick(root), font="10")
+    btnAddPage.pack(side=LEFT, padx=2, pady=2)
+
+    # Buttons for main panel switching another panels
     btnColorSelect = Button(frame1, image=images[6], command=btnColorSelectClick, font="10")
     btnColorSelect.pack(side=LEFT, padx=2, pady=2)
     btnWidthSelect = Button(frame1, image=images[7], command=btnWidthSelectClick, font="10")
@@ -322,6 +686,13 @@ def main():
     btnArrowSelect.pack(side=LEFT, padx=2, pady=2)
     btnDotSelect = Button(frame1, image=images[19], command=btnDotSelectClick, font="10")
     btnDotSelect.pack(side=LEFT, padx=2, pady=2)
+
+    btnSave = Button(frame1, image=images[25], command=save, font="10")
+    btnSave.pack(side=LEFT, padx=2, pady=2)
+    btnLoad = Button(frame1, image=images[24], command=lambda: load(canvas, root), font="10")
+    btnLoad.pack(side=LEFT, padx=2, pady=2)
+
+    # Panel select width arrow
     frameWidth = Frame(frame1)
     frameWidth.pack_forget()
     btnWidth2 = Button(frameWidth, image=images[8], command=lambda: widthClick(2), font="10")
@@ -354,11 +725,24 @@ def main():
     btnArrow2.pack(side=LEFT, padx=2, pady=2)
     btnArrow3 = Button(frameDot, image=images[22], command=lambda: dotClick((20, 20)), font="10")
     btnArrow3.pack(side=LEFT, padx=2, pady=2)
+    frameOptions = Frame(frame1)
+    frameOptions.pack_forget()
+    chbGrid = Checkbutton(frameOptions, text='grid')
+    chbGrid.pack(side=LEFT, padx=2, pady=2)
+
+    makeSelFig(10000, 10000, 10001, 10001, None)
+
+
     root.bind("<Key>", f_quit)
-    canvas.bind("<Button-1>", mouseDown(root))
+    canvas.bind("<Button-1>", mouseDown)
     canvas.bind("<B1-Motion>", mouseMove)
+    canvas.bind("<Motion>", mouseMoveNoButton)
     canvas.bind("<ButtonRelease-1>", mouseUp)
+    root.bind('<Configure>', lambda e: on_move_or_resize())
+
     color = "blue"
+    # TODO check directories tmp and lessons. If no - create them
+
     print(root.wm_geometry())
 
     root.mainloop()

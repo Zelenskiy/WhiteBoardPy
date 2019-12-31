@@ -6,6 +6,9 @@ def coords(canvas, obj):
     return canvas.bbox(obj)
 
 
+def moveObjectBy(canvas, obj, dx, dy):
+  canvas.move(obj, dx, dy)
+
 def transformCoord(x, y):
     global _viewPort
     if _viewPort:
@@ -74,10 +77,10 @@ def penMove(color, xStart, yStart, r, canvas, figures, x, y):
                                         fill=color, width=1))
             k.append("oval")
             c = {}
-            c['x1'] = xx - r
-            c['y1'] = yy - r
-            c['x2'] = xx + r
-            c['y2'] = yy + r
+            c['x1'] = xx - r // 2
+            c['y1'] = yy - r // 2
+            c['x2'] = xx + r // 2
+            c['y2'] = yy + r // 2
             c['outline'] = color
             c['fill'] = color
             c['width'] = 1

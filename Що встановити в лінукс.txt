@@ -6,6 +6,7 @@ sudo apt-get install python3-numpy
 sudo pip3 install setuptools
 sudo pip3 install python3-xlib
 sudo pip3 install pyautogui
+sudo apt-get install python3-pil.imagetk
 
 sudo apt-get install scrot
 
