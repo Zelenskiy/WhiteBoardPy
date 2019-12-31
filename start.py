@@ -1,4 +1,5 @@
 import numpy as np
+import math
 from tkinter import *
 from tkinter import colorchooser, LAST
 from datetime import datetime
@@ -157,7 +158,7 @@ def load(canv, root):
         grList, selFig, tool
     canv.delete(ALL)
     figures = []
-    #selFig = {}
+    # selFig = {}
     tool = 1
 
     with open("test.wb", "rb") as fp:  # Unpickling
@@ -214,8 +215,9 @@ def mouseDown(event):
                     pass
                 else:
                     canvas.coords(selFig['0'], x1 - 1, y1 - 1, x2 + 1, y2 + 1)
-                    canvas.coords(selFig['SE'], x2 - 10, y2 - 10, x2 + 10, y2 + 10)
+                    # canvas.coords(selFig['SE'], max(x2, x1) - 20, max(y2, y1) - 20, max(x2, x1), max(y2, y1))
 
+                    canvas.coords(selFig['D'], x2 - 10, abs(y1 + y2) // 2 - 10, x2 + 10,abs(y1 + y2) // 2 + 10)
                     # canvas.coords(selFig['NW'], x1 - 10, y1 - 10, x1 + 10, y1 + 10)
                     # canvas.coords(selFig['NE'], x2 - 10, y1 - 10, x2 + 10, y1 + 10)
                     # canvas.coords(selFig['SW'], x1 - 10, y2 - 10, x1 + 10, y2 + 10)
@@ -224,15 +226,14 @@ def mouseDown(event):
 
                     selFig['Obj'] = fig
                 fl = True
-                print("selFig ->", selFig)
-                print("LEN ->", len(selFig))
                 break
 
-
     # repeat code
+    fl = False
     if tool == 8:
+
         # change cursor
-        print (selFig)
+        print(selFig)
         if selFig['0'] != None:
             try:
                 x1, y1, x2, y2 = coords(canvas, selFig['0'])
@@ -244,12 +245,13 @@ def mouseDown(event):
                 pass
     if not fl:
         pass
-        #selFig = {}
+        # selFig = {}
 
 
 def mouseMove(event):
     global count, xStart, yStart, eraser, tool, errSize, color, canvas, xc, yc, line0, \
         xLineStart, yLineStart, cLine0, penWidth, penColor, selFig, selObj
+    xx = ""
 
     if xStart == 0 and yStart == 0 and tool != 3 and tool != 4:
         xStart = event.x
@@ -322,51 +324,115 @@ def mouseMove(event):
             cLine0['fill'] = brushColor
     elif tool == 8:
         # draging figure
-        print(selFig['Obj'][1])
-        if selFig['Obj'][1] == 'rectangle':
+
+        xo1, yo1, xo2, yo2 = coords(canvas, selFig['Obj'][0])
+        if math.sqrt((event.x - xo2) ** 2 + (event.y - yo2) ** 2) < 20:
+            print("!!!!!!!!!!!!!!!!!!!!!!")
             x1 = selFig['Obj'][2]['x1']
             y1 = selFig['Obj'][2]['y1']
             x2 = selFig['Obj'][2]['x2']
             y2 = selFig['Obj'][2]['y2']
-            x3 = selFig['Obj'][2]['x3']
-            y3 = selFig['Obj'][2]['y3']
-            x4 = selFig['Obj'][2]['x4']
-            y4 = selFig['Obj'][2]['y4']
-            dx = event.x - xStart
-            dy = event.y - yStart
-            selFig['Obj'][2]['x1'] = x1 + dx
-            selFig['Obj'][2]['y1'] = y1 + dy
-            selFig['Obj'][2]['x2'] = x2 + dx
-            selFig['Obj'][2]['y2'] = y2 + dy
-            selFig['Obj'][2]['x3'] = x3 + dx
-            selFig['Obj'][2]['y3'] = y3 + dy
-            selFig['Obj'][2]['x4'] = x4 + dx
-            selFig['Obj'][2]['y4'] = y4 + dy
-            moveObjectBy(canvas, selFig['Obj'][0], dx, dy)
-        elif selFig['Obj'][1] == 'line':
-            x1 = selFig['Obj'][2]['x1']
-            y1 = selFig['Obj'][2]['y1']
-            x2 = selFig['Obj'][2]['x2']
-            y2 = selFig['Obj'][2]['y2']
-            dx = event.x - xStart
-            dy = event.y - yStart
-            selFig['Obj'][2]['x1'] = x1 + dx
-            selFig['Obj'][2]['y1'] = y1 + dy
-            selFig['Obj'][2]['x2'] = x2 + dx
-            selFig['Obj'][2]['y2'] = y2 + dy
-            moveObjectBy(canvas, selFig['Obj'][0], dx, dy)
+
+            if x2 > x1 and y2 > y1:
+                print(11111111)
+                canvas.coords(selFig['Obj'][0], x1, y1, event.x, event.y)
+                canvas.coords(selFig['0'], x1 - 1, y1 - 1, event.x + 1, event.y + 1)
+                selFig['Obj'][2]['x2'] = event.x
+                selFig['Obj'][2]['y2'] = event.y
+            elif x2 < x1 and y2 > y1:
+                canvas.coords(selFig['Obj'][0], event.x, y1, x2, event.y)
+                canvas.coords(selFig['0'], event.x - 1, y1 - 1, x2 + 1, event.y + 1)
+                selFig['Obj'][2]['x1'] = event.x
+                selFig['Obj'][2]['y2'] = event.y
+            elif x2 < x1 and y2 > y1:
+                pass
+            elif x2 < x1 and y2 < y1:
+                pass
+            elif x2 > x1 and y2 < y1:
+                pass
+
+            # x3 = event.x
+            # y3 = event.y
+            # canvas.coords(selFig['Obj'][0], x1, y1, x2, y2)
+            # canvas.coords(selFig['0'], x1 - 1, y1 - 1, x2 + 1, y2 + 1)
+            # selFig['Obj'][2]['x1'] = x1
+            # selFig['Obj'][2]['y1'] = y1
+            # selFig['Obj'][2]['x2'] = x2
+            # selFig['Obj'][2]['y2'] = y2
+
+            xx = "resize"
+        else:
+            x1, y1, x2, y2 = coords(canvas, selFig['Obj'][0])
+            if (event.x > x1) and (event.x < x2) and (event.y > y1) and (event.y < y2):
+                if selFig['Obj'][1] == 'rectangle':
+                    x1 = selFig['Obj'][2]['x1']
+                    y1 = selFig['Obj'][2]['y1']
+                    x2 = selFig['Obj'][2]['x2']
+                    y2 = selFig['Obj'][2]['y2']
+                    x3 = selFig['Obj'][2]['x3']
+                    y3 = selFig['Obj'][2]['y3']
+                    x4 = selFig['Obj'][2]['x4']
+                    y4 = selFig['Obj'][2]['y4']
+                    dx = event.x - xStart
+                    dy = event.y - yStart
+                    selFig['Obj'][2]['x1'] = x1 + dx
+                    selFig['Obj'][2]['y1'] = y1 + dy
+                    selFig['Obj'][2]['x2'] = x2 + dx
+                    selFig['Obj'][2]['y2'] = y2 + dy
+                    selFig['Obj'][2]['x3'] = x3 + dx
+                    selFig['Obj'][2]['y3'] = y3 + dy
+                    selFig['Obj'][2]['x4'] = x4 + dx
+                    selFig['Obj'][2]['y4'] = y4 + dy
+                    # moveObjectBy(canvas, selFig['Obj'][0], dx, dy)
+                    # canvas.coords(selFig['0'], x1 - 1, y1 - 1, x3 + 1, y3 + 1)
+                    # canvas.coords(selFig['SE'], max(x3,x1) - 10, max(y3,y1) - 10, max(x3,x1) + 10, max(y3,y1) + 10)
+                elif selFig['Obj'][1] == 'line':
+                    x1 = selFig['Obj'][2]['x1']
+                    y1 = selFig['Obj'][2]['y1']
+                    x3 = selFig['Obj'][2]['x2']
+                    y3 = selFig['Obj'][2]['y2']
+                    dx = event.x - xStart
+                    dy = event.y - yStart
+                    selFig['Obj'][2]['x1'] = x1 + dx
+                    selFig['Obj'][2]['y1'] = y1 + dy
+                    selFig['Obj'][2]['x2'] = x3 + dx
+                    selFig['Obj'][2]['y2'] = y3 + dy
+                elif selFig['Obj'][1] == 'image':
+                    x = selFig['Obj'][2]['x']
+                    y = selFig['Obj'][2]['y']
+                    w = selFig['Obj'][2]['width']
+                    h = selFig['Obj'][2]['height']
+                    dx = event.x - xStart
+                    dy = event.y - yStart
+                    selFig['Obj'][2]['x'] = x + dx
+                    selFig['Obj'][2]['y'] = y + dy
+                    selFig['Obj'][2]['width'] = w
+                    selFig['Obj'][2]['height'] = w
+                    canvas.coords(selFig['Obj'][0], x + dx, y + dy)
+                    canvas.coords(selFig['0'], coords(canvas, selFig['Obj'][0]))
+                    x1, y1, x2, y2 = coords(canvas, selFig['Obj'][0])
+                    canvas.coords(selFig['D'], x2 - 10, abs(y1 + y2) // 2 - 10, x2 + 10, abs(y1 + y2) // 2 + 10)
+
+                if xx != "resize" and selFig['Obj'][1] != 'image':
+                    moveObjectBy(canvas, selFig['Obj'][0], dx, dy)
+                    canvas.coords(selFig['0'], coords(canvas, selFig['Obj'][0]))
+                    x1,y1,x2,y2 = coords(canvas, selFig['Obj'][0])
+                    canvas.coords(selFig['D'], x2 - 10, abs(y1 + y2) // 2 - 10, x2 + 10,abs(y1 + y2) // 2 + 10)
+                    # canvas.coords(selFig['SE'], max(x3, x1) - 10, max(y3, y1) - 10, max(x3, x1) + 10, max(y3, y1) + 10)
+
+
 
     if tool != 8:
         if selFig != {}:
             canvas.coords(selFig, 100000, 100000, 1000001, 100001)
-            #selFig = {}
+            # selFig = {}
 
     xStart = event.x
     yStart = event.y
 
 
 def mouseMoveNoButton(event):
-    global selFig , tool
+    global selFig, tool
     if tool == 8:
         # change cursor
         try:
@@ -379,9 +445,6 @@ def mouseMoveNoButton(event):
                     canvas.config(cursor="tcross")
         except:
             pass
-
-
-
 
 
 def mouseUp(event):
@@ -399,6 +462,14 @@ def mouseUp(event):
         k.append(cLine0)
         figures.append(k)
         print(figures)
+
+    x1, y1, x2, y2 = coords(canvas, selFig['D'])
+    if (event.x > x1) and (event.x < x2) and (event.y > y1) and (event.y < y2):
+        canvas.delete(selFig['Obj'][0])
+        canvas.coords(selFig['0'],10000, 10000, 10001, 10001)
+        canvas.coords(selFig['D'],10000, 10000, 10001, 10001)
+        figures.remove(selFig['Obj'])
+
 
     # if tool == 8:
     #     # select object
@@ -449,18 +520,20 @@ def mouseUp(event):
 def create_canvas(frame):
     canvases.append(Canvas(frame))
 
+
 def makeSelFig(x1, y1, x2, y2, Obj):
     global canvas, selFig
-    #selFig = {}
-    selFig['0'] = canvas.create_rectangle(x1 - 1, y1 - 1, x2 + 1, y2 + 1, width=1, outline="red", dash=(5,5))
+    # selFig = {}
+    selFig['0'] = canvas.create_rectangle(x1 - 1, y1 - 1, x2 + 1, y2 + 1, width=1, outline="red", dash=(5, 5))
     # selFig['0'].config(cursor="fleur")
     # selFig['NW'] = canvas.create_oval(x1 - 10, y1 - 10, x1 + 10, y1 + 10, width=1, outline="red",                                      fill="yellow")
     # selFig['NE'] = canvas.create_oval(x2 - 10, y1 - 10, x2 + 10, y1 + 10, width=1, outline="red",                                      fill="yellow")
-    selFig['SE'] = canvas.create_oval(x2 - 10, y2 - 10, x2 + 10, y2 + 10, width=1, outline="red",
-                                      fill="yellow")
+    # selFig['SE'] = canvas.create_rectangle(x2 - 20, y2 - 20, x2 + 1, y2 + 1, width=1, outline="red")
+
     # selFig['SW'] = canvas.create_oval(x1 - 10, y2 - 10, x1 + 10, y2 + 10, width=1, outline="red",                                      fill="yellow")
     # selFig['S'] = canvas.create_rectangle(abs(x1 + x2) // 2 - 10, y2 - 10, abs(x1 + x2) // 2 + 10,                                     y2 + 10, width=1, outline="red", fill="yellow")
     # selFig['E'] = canvas.create_rectangle(x2 - 10, abs(y1 + y2) // 2 - 10, x2 + 10,                                          abs(y1 + y2) // 2 + 10, width=1, outline="red", fill="yellow")
+    selFig['D'] = canvas.create_rectangle(x2 - 10, abs(y1 + y2) // 2 - 10, x2 + 10,abs(y1 + y2) // 2 + 10, width=1, outline="red", fill="red")
     selFig['Obj'] = Obj
 
 
@@ -525,7 +598,6 @@ def main():
         btnDown.place(x=w // 2, y=h - 60)
         btnRight.place(x=w - 25, y=h // 2)
 
-
     def btnHandClick():
         print('Hand')
         global tool
@@ -549,7 +621,6 @@ def main():
         btnLine.config(bg=btnActiveColor)
         deleteSelectionLinks()
 
-
     def btnErClick():
         print('Erazer')
         global tool
@@ -557,7 +628,6 @@ def main():
         noSelectAll(frame1)
         btnEr.config(bg=btnActiveColor)
         deleteSelectionLinks()
-
 
     def btnRectClick():
         print('Rect')
@@ -576,18 +646,18 @@ def main():
         btnRect.config(bg=btnActiveColor)
         deleteSelectionLinks()
 
-        #selFig = {}
+        # selFig = {}
 
     def deleteSelectionLinks():
         global selFig, canvas
         deleteObject(canvas, selFig['0'])
+        deleteObject(canvas, selFig['D'])
         # deleteObject(canvas, selFig['NW'])
         # deleteObject(canvas, selFig['NE'])
-        deleteObject(canvas, selFig['SE'])
+        # deleteObject(canvas, selFig['SE'])
         # deleteObject(canvas, selFig['SW'])
         # deleteObject(canvas, selFig['S'])
         # deleteObject(canvas, selFig['E'])
-
 
     def btnPenClick():
         global tool
@@ -627,7 +697,6 @@ def main():
         lineDot = d
         frameDot.pack_forget()
         deleteSelectionLinks()
-
 
     def btnWidthSelectClick():
         print("Select width")
@@ -731,7 +800,6 @@ def main():
     chbGrid.pack(side=LEFT, padx=2, pady=2)
 
     makeSelFig(10000, 10000, 10001, 10001, None)
-
 
     root.bind("<Key>", f_quit)
     canvas.bind("<Button-1>", mouseDown)
