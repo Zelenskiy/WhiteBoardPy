@@ -50,6 +50,7 @@ elif platform == "linux":
 grList = []
 errSize = 10
 figures = []
+# images = []
 canvases = []
 cpFigures = []
 flag = 0
@@ -76,64 +77,53 @@ screen_width = 0
 screen_height = 0
 root = None
 selFig = {}
+window_width = 0
+window_height = 0
 
 xc = 0
 yc = 0
 
 
-def btnScrClick(w):
-    global screen_width, screen_height, canvas, figures
+def btnScrInsertInCanvasClick(root, floatWindow, canvas, figures, screen_width, screen_height):
+    print('btnClick')
+    print("in-", figures)
+    width = 600
+    x0 = -xc + window_width - width - 40
+    y0 = -yc + 20
+    name = 'tmp/' + datetime.strftime(datetime.now(), "%Y_%m_%d_%H_%M_%S") + '.png'
+    image = pyautogui.screenshot(region=(0, 0, screen_width, screen_height + 75))
+    image.save(name)
+    k = screen_width / (screen_height + 75)
+    height = int(width / k)
+    image = image.resize((width, height), Image.ANTIALIAS)
+    root.wm_state('normal')
+    root.output = ImageTk.PhotoImage(image)
+    k = []
+    c = {}
+    c['name'] = name
+    c['x'] = x0
+    c['y'] = y0
+    c['width'] = width
+    c['height'] = height
+    k.append(canvas.create_image(x0, y0, image=root.output, state=NORMAL, anchor=NW))
+    k.append("image")
+    k.append(c)
+    figures.append(k)
+    print(figures)
+    floatWindow.destroy()
 
-    def btnClick():
-        print('btnClick')
-        width = 600
-        x0 = 500
-        y0 = 10
-        # floatWindow.geometry('+{}+{}'.format(-100, -100))
-        # floatWindow.geometry("40x35+100+100")
-        name = 'tmp/' + datetime.strftime(datetime.now(), "%Y_%m_%d_%H_%M_%S") + '.png'
-        image = pyautogui.screenshot(region=(0, 0, screen_width, screen_height + 75))
-        image.save(name)
-        k = screen_width / (screen_height + 75)
-        height = int(width / k)
-        image = image.resize((width, height), Image.ANTIALIAS)
-        w.wm_state('normal')
-        w.output = ImageTk.PhotoImage(image)
-        im = canvas.create_image(x0, y0, image=w.output, state=NORMAL, anchor=NW)
-        canvas.update()
-        floatWindow.destroy()
-        # canvas.create_window(20, 20)
-        k = []
-        c = {}
-        c['name'] = name
-        c['x'] = x0
-        c['y'] = y0
-        c['width'] = width
-        c['height'] = height
-        k.append(im)
-        k.append("image")
-        k.append(c)
-        figures.append(k)
-        print(figures)
 
+def btnScrClick(root,canvas, figures, screen_width, screen_height, window_width, window_height):
+
+    print("out-", figures)
     print('btnScrClick')
-    w.wm_state('iconic')
+    root.wm_state('iconic')
     floatWindow = Tk()
     floatWindow.geometry("40x35+20+20")
-    # floatWindow.wm_state('icon')
-    # window without border
-
-    btn = Button(floatWindow, text='Sr', command=btnClick)
-    # btn.config(bg='systemTransparent')
-
+    btnScrInsertInCanvas = Button(floatWindow, text='Sr', command=lambda: btnScrInsertInCanvasClick(root, floatWindow, canvas, figures, screen_width, screen_height))
     floatWindow.overrideredirect(1)
     floatWindow.wm_attributes("-topmost", True)
-
-    # floatWindow.attributes("-transparentcolor", "white")
-
-    btn.pack(fill=BOTH, expand=True)
-
-    # w.wm_state('normal')
+    btnScrInsertInCanvas.pack(fill=BOTH, expand=True)
 
 
 def save():
@@ -217,7 +207,7 @@ def mouseDown(event):
                     canvas.coords(selFig['0'], x1 - 1, y1 - 1, x2 + 1, y2 + 1)
                     # canvas.coords(selFig['SE'], max(x2, x1) - 20, max(y2, y1) - 20, max(x2, x1), max(y2, y1))
 
-                    canvas.coords(selFig['D'], x2 - 10, abs(y1 + y2) // 2 - 10, x2 + 10,abs(y1 + y2) // 2 + 10)
+                    canvas.coords(selFig['D'], x2 - 10, abs(y1 + y2) // 2 - 10, x2 + 10, abs(y1 + y2) // 2 + 10)
                     # canvas.coords(selFig['NW'], x1 - 10, y1 - 10, x1 + 10, y1 + 10)
                     # canvas.coords(selFig['NE'], x2 - 10, y1 - 10, x2 + 10, y1 + 10)
                     # canvas.coords(selFig['SW'], x1 - 10, y2 - 10, x1 + 10, y2 + 10)
@@ -336,20 +326,32 @@ def mouseMove(event):
             if x2 > x1 and y2 > y1:
                 print(11111111)
                 canvas.coords(selFig['Obj'][0], x1, y1, event.x, event.y)
-                canvas.coords(selFig['0'], x1 - 1, y1 - 1, event.x + 1, event.y + 1)
+                canvas.coords(selFig['0'], xo1 - 1, yo1 - 1, event.x + 1, event.y + 1)
+                canvas.coords(selFig['D'], event.x - 10, (yo1 + event.y) // 2 - 10, event.x + 10,
+                              (yo1 + event.y) // 2 + 10)
                 selFig['Obj'][2]['x2'] = event.x
                 selFig['Obj'][2]['y2'] = event.y
             elif x2 < x1 and y2 > y1:
                 canvas.coords(selFig['Obj'][0], event.x, y1, x2, event.y)
-                canvas.coords(selFig['0'], event.x - 1, y1 - 1, x2 + 1, event.y + 1)
+                canvas.coords(selFig['0'], xo1 - 1, yo1 - 1, event.x + 1, event.y + 1)
+                canvas.coords(selFig['D'], event.x - 10, (yo1 + event.y) // 2 - 10, event.x + 10,
+                              (yo1 + event.y) // 2 + 10)
                 selFig['Obj'][2]['x1'] = event.x
                 selFig['Obj'][2]['y2'] = event.y
-            elif x2 < x1 and y2 > y1:
-                pass
             elif x2 < x1 and y2 < y1:
-                pass
+                canvas.coords(selFig['Obj'][0], event.x, event.y, x2, y2)
+                canvas.coords(selFig['0'], xo1 - 1, yo1 - 1, event.x + 1, event.y + 1)
+                canvas.coords(selFig['D'], event.x - 10, (yo1 + event.y) // 2 - 10, event.x + 10,
+                              (yo1 + event.y) // 2 + 10)
+                selFig['Obj'][2]['x1'] = event.x
+                selFig['Obj'][2]['y1'] = event.y
             elif x2 > x1 and y2 < y1:
-                pass
+                canvas.coords(selFig['Obj'][0], x1, event.y, event.x, y2)
+                canvas.coords(selFig['0'], xo1 - 1, yo1 - 1, event.x + 1, event.y + 1)
+                canvas.coords(selFig['D'], event.x - 10, (yo1 + event.y) // 2 - 10, event.x + 10,
+                              (yo1 + event.y) // 2 + 10)
+                selFig['Obj'][2]['x2'] = event.x
+                selFig['Obj'][2]['y1'] = event.y
 
             # x3 = event.x
             # y3 = event.y
@@ -416,11 +418,9 @@ def mouseMove(event):
                 if xx != "resize" and selFig['Obj'][1] != 'image':
                     moveObjectBy(canvas, selFig['Obj'][0], dx, dy)
                     canvas.coords(selFig['0'], coords(canvas, selFig['Obj'][0]))
-                    x1,y1,x2,y2 = coords(canvas, selFig['Obj'][0])
-                    canvas.coords(selFig['D'], x2 - 10, abs(y1 + y2) // 2 - 10, x2 + 10,abs(y1 + y2) // 2 + 10)
+                    x1, y1, x2, y2 = coords(canvas, selFig['Obj'][0])
+                    canvas.coords(selFig['D'], x2 - 10, abs(y1 + y2) // 2 - 10, x2 + 10, abs(y1 + y2) // 2 + 10)
                     # canvas.coords(selFig['SE'], max(x3, x1) - 10, max(y3, y1) - 10, max(x3, x1) + 10, max(y3, y1) + 10)
-
-
 
     if tool != 8:
         if selFig != {}:
@@ -462,14 +462,14 @@ def mouseUp(event):
         k.append(cLine0)
         figures.append(k)
         print(figures)
-
-    x1, y1, x2, y2 = coords(canvas, selFig['D'])
-    if (event.x > x1) and (event.x < x2) and (event.y > y1) and (event.y < y2):
-        canvas.delete(selFig['Obj'][0])
-        canvas.coords(selFig['0'],10000, 10000, 10001, 10001)
-        canvas.coords(selFig['D'],10000, 10000, 10001, 10001)
-        figures.remove(selFig['Obj'])
-
+    print(selFig['D'])
+    if coords(canvas, selFig['D']) != None:
+        x1, y1, x2, y2 = coords(canvas, selFig['D'])
+        if (event.x > x1) and (event.x < x2) and (event.y > y1) and (event.y < y2):
+            canvas.delete(selFig['Obj'][0])
+            canvas.coords(selFig['0'], 10000, 10000, 10001, 10001)
+            canvas.coords(selFig['D'], 10000, 10000, 10001, 10001)
+            figures.remove(selFig['Obj'])
 
     # if tool == 8:
     #     # select object
@@ -533,7 +533,8 @@ def makeSelFig(x1, y1, x2, y2, Obj):
     # selFig['SW'] = canvas.create_oval(x1 - 10, y2 - 10, x1 + 10, y2 + 10, width=1, outline="red",                                      fill="yellow")
     # selFig['S'] = canvas.create_rectangle(abs(x1 + x2) // 2 - 10, y2 - 10, abs(x1 + x2) // 2 + 10,                                     y2 + 10, width=1, outline="red", fill="yellow")
     # selFig['E'] = canvas.create_rectangle(x2 - 10, abs(y1 + y2) // 2 - 10, x2 + 10,                                          abs(y1 + y2) // 2 + 10, width=1, outline="red", fill="yellow")
-    selFig['D'] = canvas.create_rectangle(x2 - 10, abs(y1 + y2) // 2 - 10, x2 + 10,abs(y1 + y2) // 2 + 10, width=1, outline="red", fill="red")
+    selFig['D'] = canvas.create_rectangle(x2 - 10, abs(y1 + y2) // 2 - 10, x2 + 10, abs(y1 + y2) // 2 + 10, width=1,
+                                          outline="red", fill="red")
     selFig['Obj'] = Obj
 
 
@@ -555,7 +556,8 @@ def noSelectAll(frame1):
 
 
 def main():
-    global canvas, color, canvas_width, canvas_height, screen_width, screen_height, selFig
+    global canvas, color, canvas_width, canvas_height, selFig
+    global window_width, window_height
     root = Tk()
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight() - 75
@@ -593,8 +595,10 @@ def main():
 
     def on_move_or_resize():
         # If windows is resizing
+        global window_width, window_height
         w = root.winfo_width()
         h = root.winfo_height()
+        window_width, window_height = w, h
         btnDown.place(x=w // 2, y=h - 60)
         btnRight.place(x=w - 25, y=h // 2)
 
@@ -741,7 +745,7 @@ def main():
     btnRect.pack(side=LEFT, padx=2, pady=2)
     btnOptions = Button(frame1, image=images[23], command=btnOptionsClick, font="10")
     btnOptions.pack(side=LEFT, padx=2, pady=2)
-    btnScr = Button(frame1, image=images[26], command=lambda: btnScrClick(root), font="10")
+    btnScr = Button(frame1, image=images[26], command=lambda: btnScrClick(root, canvas, figures, screen_width, screen_height, window_width, window_height), font="10")
     btnScr.pack(side=LEFT, padx=2, pady=2)
     btnAddPage = Button(frame1, image=images[27], command=lambda: btnAddPageClick(root), font="10")
     btnAddPage.pack(side=LEFT, padx=2, pady=2)
@@ -800,6 +804,10 @@ def main():
     chbGrid.pack(side=LEFT, padx=2, pady=2)
 
     makeSelFig(10000, 10000, 10001, 10001, None)
+
+    w = root.winfo_width()
+    h = root.winfo_height()
+    window_width, window_height = w, h
 
     root.bind("<Key>", f_quit)
     canvas.bind("<Button-1>", mouseDown)
