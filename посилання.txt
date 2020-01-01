@@ -5,6 +5,8 @@ http://robotday.ru/2018/12/27/%D0%BA%D0%B0%D0%BA-%D1%81%D0%B4%D0%B5%D0%BB%D0%B0%
 http://maf-it-prog.blogspot.com/2012/10/python-tkinter.html
 
 Курсори https://www.tutorialspoint.com/python/tk_cursors.htm
+https://www.google.com/search?q=Python+Tkinter+Cursors&newwindow=1&rlz=1C1SQJL_ruUA852UA852&sxsrf=ACYBGNQxbjOLHbHRnEDj6WH_m0Lngcfc2w:1577910186691&source=lnms&tbm=isch&sa=X&ved=2ahUKEwjM56jBnePmAhVa6qYKHUsHA_UQ_AUoAXoECAwQAw&biw=1346&bih=636#imgrc=PGNLWL2YDnnF2M:
+
 
 Опис параметрів для графічних елементів на canvas
 https://www.opennet.ru/docs/RUS/tcltk/tk.html#%D0%9E%D0%91%D0%97%D0%9E%D0%A0%20%D0%A2%D0%98%D0%9F%D0%9E%D0%92%20%D0%AD%D0%9B%D0%95%D0%9C%D0%95%D0%9D%D0%A2%D0%9E%D0%92
