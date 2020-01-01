@@ -47,57 +47,24 @@ elif platform == "linux":
     VK_RETURN = 0x24  # RETURN key
     VK_ESCAPE = 0x09  # ESC key
 
-grList = []
-errSize = 10
-figures = []
-# images = []
-canvases = []
-cpFigures = []
-flag = 0
-tool = 1
-xStart = 0
-yStart = 0
-canvas = None
-color = None
-xLineStart = 0
-yLineStart = 0
-line0 = None
-cLine0 = None
-penWidth = 2
-penColor = "#0000FF"
-btnActiveColor = "#331177"
-brushColor = ""
-lineArrow = ''
-lineDot = ''
-gridColor = "#D0D0D0"
-canvas_width = 0
-canvas_height = 0
-fonColor = "#E9FBCA"
-screen_width = 0
-screen_height = 0
-root = None
-selFig = {}
-window_width = 0
-window_height = 0
 
-xc = 0
-yc = 0
-
-
-def btnScrInsertInCanvasClick(root, floatWindow, canvas, figures, screen_width, screen_height):
+def btnScrInsertInCanvasClick(root, floatWindow, winVar):
     print('btnClick')
-    print("in-", figures)
+
     width = 600
-    x0 = -xc + window_width - width - 40
-    y0 = -yc + 20
+    winVar['window_width'] = root.winfo_width()
+    winVar['window_height'] = root.winfo_height()
+    x0 = -winVar['xc'] + winVar['window_width'] - width - 40
+    y0 = -winVar['yc'] + 20
     name = 'tmp/' + datetime.strftime(datetime.now(), "%Y_%m_%d_%H_%M_%S") + '.png'
-    image = pyautogui.screenshot(region=(0, 0, screen_width, screen_height + 75))
+    image = (pyautogui.screenshot(region=(0, 0, winVar['screen_width'], winVar['screen_height'] + 75)))
     image.save(name)
-    k = screen_width / (screen_height + 75)
+
+    k = winVar['screen_width'] / (winVar['screen_height'] + 75)
     height = int(width / k)
     image = image.resize((width, height), Image.ANTIALIAS)
     root.wm_state('normal')
-    root.output = ImageTk.PhotoImage(image)
+    winVar['images'].append(ImageTk.PhotoImage(image))
     k = []
     c = {}
     c['name'] = name
@@ -105,87 +72,93 @@ def btnScrInsertInCanvasClick(root, floatWindow, canvas, figures, screen_width, 
     c['y'] = y0
     c['width'] = width
     c['height'] = height
-    k.append(canvas.create_image(x0, y0, image=root.output, state=NORMAL, anchor=NW))
+    k.append(winVar['canvas'].create_image(x0, y0, image=winVar['images'][-1], state=NORMAL, anchor=NW))
     k.append("image")
     k.append(c)
-    figures.append(k)
-    print(figures)
+    winVar['figures'].append(k)
+    print(winVar['images'])
+
+
+
     floatWindow.destroy()
 
 
-def btnScrClick(root,canvas, figures, screen_width, screen_height, window_width, window_height):
-
-    print("out-", figures)
+def btnScrClick(root, winVar):
+    print("out-", winVar['figures'])
     print('btnScrClick')
     root.wm_state('iconic')
     floatWindow = Tk()
     floatWindow.geometry("40x35+20+20")
-    btnScrInsertInCanvas = Button(floatWindow, text='Sr', command=lambda: btnScrInsertInCanvasClick(root, floatWindow, canvas, figures, screen_width, screen_height))
+    btnScrInsertInCanvas = Button(floatWindow, text='Sr',
+                                  command=lambda root=root, floatWindow=floatWindow,
+                                                 winVar=winVar: btnScrInsertInCanvasClick(root, floatWindow, winVar))
     floatWindow.overrideredirect(1)
     floatWindow.wm_attributes("-topmost", True)
     btnScrInsertInCanvas.pack(fill=BOTH, expand=True)
 
 
-def save():
-    global figures, penColor, brushColor, penWidth, fonColor, canvas_width, canvas_height, xc, yc
+def save(winVar):
+    # global figures, penColor, brushColor, penWidth, fonColor, canvas_width, canvas_height, xc, yc
     data = {}
-    data['figures'] = figures
-    data['penColor'] = penColor
-    data['brushColor'] = brushColor
-    data['penWidth'] = penWidth
-    data['fonColor'] = fonColor
-    data['canvas_width'] = canvas_width
-    data['canvas_height'] = canvas_height
-    data['xc'] = xc
-    data['yc'] = yc
+    data['figures'] = winVar['figures']
+    data['penColor'] = winVar['penColor']
+    data['brushColor'] = winVar['brushColor']
+    data['penWidth'] = winVar['penWidth']
+    data['fonColor'] = winVar['fonColor']
+    data['canvas_width'] = winVar['canvas_width']
+    data['canvas_height'] = winVar['canvas_height']
+    data['xc'] = winVar['xc']
+    data['yc'] = winVar['yc']
 
     with open("test.wb", "wb") as fp:
         pickle.dump(data, fp)
 
 
-def load(canv, root):
-    global figures, penColor, brushColor, penWidth, fonColor, canvas_width, canvas_height, xc, yc, \
-        grList, selFig, tool
-    canv.delete(ALL)
-    figures = []
-    # selFig = {}
-    tool = 1
+def load(root, winVar):
+    # global figures, penColor, brushColor, penWidth, fonColor, canvas_width, canvas_height, xc, yc, \
+    #     grList, selFig, tool
+    winVar['canvas'].delete(ALL)
+    winVar['figures'] = []
+    winVar['tool'] = 1
 
     with open("test.wb", "rb") as fp:  # Unpickling
         data = pickle.load(fp)
-    figures = data['figures']
-    penColor = data['penColor']
-    brushColor = data['brushColor']
-    penWidth = data['penWidth']
-    fonColor = data['fonColor']
-    canvas_width = data['canvas_width']
-    canvas_height = data['canvas_height']
-    xc = data['xc']
-    yc = data['yc']
+    winVar['figures'] = data['figures']
+    winVar['penColor'] = data['penColor']
+    winVar['brushColor'] = data['brushColor']
+    winVar['penWidth'] = data['penWidth']
+    winVar['fonColor'] = data['fonColor']
+    winVar['canvas_width'] = data['canvas_width']
+    winVar['canvas_height'] = data['canvas_height']
+    winVar['xc'] = data['xc']
+    winVar['yc'] = data['yc']
     # change size and position canvas
-    canv.place(x=xc, y=yc)
-    canv.config(width=canvas_width, height=canvas_height)
-    grid(canvas, gridColor, canvas_width + 50, canvas_height + 50, 50, grList)
+    winVar['canvas'].place(x=winVar['xc'], y=winVar['yc'])
+    winVar['canvas'].config(width=winVar['canvas_width'], height=winVar['canvas_height'])
+    grid(winVar)
 
-    for fig in figures:
+    for fig in winVar['figures']:
         f = fig[2]
         if fig[1] == 'oval':
-            fig[0] = canv.create_oval(f['x1'], f['y1'], f['x2'], f['y2'], outline=f['outline'],
-                                      fill=f['fill'], width=f['width'])
+            fig[0] = winVar['canvas'].create_oval(f['x1'], f['y1'], f['x2'], f['y2'], outline=f['outline'],
+                                                  fill=f['fill'], width=f['width'])
         elif fig[1] == 'line':
-            canv.create_line(f['x1'], f['y1'], f['x2'], f['y2'], width=f['width'], fill=f['fill'],
-                             arrow=f['arrow'], dash=f['dash'])
+            winVar['canvas'].create_line(f['x1'], f['y1'], f['x2'], f['y2'],
+                                         arrow=f['arrow'], dash=f['dash'], fill=f['fill'], width=f['width'])
+
+
         elif fig[1] == 'rectangle':
-            fig[0] = canv.create_polygon(f['x1'], f['y1'], f['x2'], f['y2'], f['x3'], f['y3'], f['x4'], f['y4'],
-                                         width=f['width'], fill=f['fill'],
-                                         outline=f['outline'])
+            fig[0] = winVar['canvas'].create_polygon(f['x1'], f['y1'], f['x2'], f['y2'], f['x3'], f['y3'], f['x4'],
+                                                     f['y4'],
+                                                     width=f['width'], height=f['height'], fill=f['fill'],
+                                                     outline=f['outline'])
         elif fig[1] == 'image':
             width = f['width']
             height = f['height']
             image = Image.open(f['name'])
             image = image.resize((width, height), Image.ANTIALIAS)
             root.output = ImageTk.PhotoImage(image)
-            fig[0] = canv.create_image(f['x'], f['y'], image=root.output, state=NORMAL, anchor=NW)
+            fig[0] = winVar['canvas'].create_image(f['x'], f['y'], image=root.output, state=NORMAL, anchor=NW)
 
 
 def f_quit(event):
@@ -193,44 +166,44 @@ def f_quit(event):
         quit()
 
 
-def mouseDown(event):
-    global selFig, canvas, figures
-    if tool == 8:
+def mouseDown(event, winVar):
+    if winVar['tool'] == 8:
         # select object
 
-        for fig in figures:
-            x1, y1, x2, y2 = coords(canvas, fig[0])
+        for fig in winVar['figures']:
+            x1, y1, x2, y2 = coords(winVar['canvas'], fig[0])
             if (event.x > x1) and (event.x < x2) and (event.y > y1) and (event.y < y2):
-                if selFig == {}:
+                if winVar['selFig'] == {}:
                     pass
                 else:
-                    canvas.coords(selFig['0'], x1 - 1, y1 - 1, x2 + 1, y2 + 1)
-                    # canvas.coords(selFig['SE'], max(x2, x1) - 20, max(y2, y1) - 20, max(x2, x1), max(y2, y1))
+                    winVar['canvas'].coords(winVar['selFig']['0'], x1 - 1, y1 - 1, x2 + 1, y2 + 1)
+                    # winVar['canvas'].coords(selFig['SE'], max(x2, x1) - 20, max(y2, y1) - 20, max(x2, x1), max(y2, y1))
 
-                    canvas.coords(selFig['D'], x2 - 10, abs(y1 + y2) // 2 - 10, x2 + 10, abs(y1 + y2) // 2 + 10)
-                    # canvas.coords(selFig['NW'], x1 - 10, y1 - 10, x1 + 10, y1 + 10)
-                    # canvas.coords(selFig['NE'], x2 - 10, y1 - 10, x2 + 10, y1 + 10)
-                    # canvas.coords(selFig['SW'], x1 - 10, y2 - 10, x1 + 10, y2 + 10)
-                    # canvas.coords(selFig['S'], abs(x1 + x2) // 2 - 10, y2 - 10, abs(x1 + x2) // 2 + 10, y2 + 10)
-                    # canvas.coords(selFig['E'], x2 - 10, abs(y1 + y2) // 2 - 10, x2 + 10, abs(y1 + y2) // 2 + 10)
+                    winVar['canvas'].coords(winVar['selFig']['D'], x2 - 10, abs(y1 + y2) // 2 - 10, x2 + 10,
+                                            abs(y1 + y2) // 2 + 10)
+                    # winVar['canvas'].coords(selFig['NW'], x1 - 10, y1 - 10, x1 + 10, y1 + 10)
+                    # winVar['canvas'].coords(selFig['NE'], x2 - 10, y1 - 10, x2 + 10, y1 + 10)
+                    # winVar['canvas'].coords(selFig['SW'], x1 - 10, y2 - 10, x1 + 10, y2 + 10)
+                    # winVar['canvas'].coords(selFig['S'], abs(x1 + x2) // 2 - 10, y2 - 10, abs(x1 + x2) // 2 + 10, y2 + 10)
+                    # winVar['canvas'].coords(selFig['E'], x2 - 10, abs(y1 + y2) // 2 - 10, x2 + 10, abs(y1 + y2) // 2 + 10)
 
-                    selFig['Obj'] = fig
+                    winVar['selFig']['Obj'] = fig
                 fl = True
                 break
 
     # repeat code
     fl = False
-    if tool == 8:
+    if winVar['tool'] == 8:
 
         # change cursor
-        print(selFig)
-        if selFig['0'] != None:
+        print(winVar['selFig'])
+        if winVar['selFig']['0'] != None:
             try:
-                x1, y1, x2, y2 = coords(canvas, selFig['0'])
+                x1, y1, x2, y2 = coords(winVar['canvas'], winVar['selFig']['0'])
                 if (event.x > x1) and (event.x < x2) and (event.y > y1) and (event.y < y2):
-                    canvas.config(cursor="fleur")
+                    winVar['canvas'].config(cursor="fleur")
                 else:
-                    canvas.config(cursor="tcross")
+                    winVar['canvas'].config(cursor="tcross")
             except:
                 pass
     if not fl:
@@ -238,125 +211,133 @@ def mouseDown(event):
         # selFig = {}
 
 
-def mouseMove(event):
-    global count, xStart, yStart, eraser, tool, errSize, color, canvas, xc, yc, line0, \
-        xLineStart, yLineStart, cLine0, penWidth, penColor, selFig, selObj
+def mouseMove(event, winVar):
     xx = ""
+    if winVar['xStart'] == 0 and winVar['yStart'] == 0 and winVar['tool'] != 3 and winVar['tool'] != 4:
+        winVar['xStart'] = event.x
+        winVar['yStart'] = event.y
 
-    if xStart == 0 and yStart == 0 and tool != 3 and tool != 4:
-        xStart = event.x
-        yStart = event.y
+    if winVar['tool'] == 1:
+        penMove(winVar, event.x, event.y)
+        # penMove(penColor, xStart, yStart, penWidth, canvas, figures, event.x, event.y)
 
-    if tool == 1:
-        penMove(penColor, xStart, yStart, penWidth, canvas, figures, event.x, event.y)
-
-    elif tool == 2:
-        erMove(errSize, canvas, figures, event.x, event.y)
-    elif tool == 7:
-        dx = event.x - xStart
-        dy = event.y - yStart
-        xc += dx
-        if xc > 0:
-            xc -= dx
-        yc += dy
-        if yc > 0:
-            yc -= dy
-        canvas.place(x=xc, y=yc)
-        if xc + (0) > 0:
+    elif winVar['tool'] == 2:
+        erMove(winVar, event.x, event.y)
+        # erMove(errSize, canvas, figures, event.x, event.y)
+    elif winVar['tool'] == 7:
+        dx = event.x - winVar['xStart']
+        dy = event.y - winVar['yStart']
+        winVar['xc'] += dx
+        if winVar['xc'] > 0:
+            winVar['xc'] -= dx
+        winVar['yc'] += dy
+        if winVar['yc'] > 0:
+            winVar['yc'] -= dy
+        winVar['canvas'].place(x=winVar['xc'], y=winVar['yc'])
+        if winVar['xc'] + (0) > 0:
             pass
     #     TODO make for expanding if drag canvas out borger
 
-    elif tool == 3:
-        if xStart == 0 and yStart == 0:
-            xLineStart = event.x
-            yLineStart = event.y
-            line0 = canvas.create_line(xLineStart, yLineStart, xLineStart, yLineStart, width=penWidth,
-                                       fill=penColor, arrow=lineArrow, dash=lineDot)
+    elif winVar['tool'] == 3:
+        # line
+        if winVar['xStart'] == 0 and winVar['yStart'] == 0:
+            winVar['xLineStart'] = event.x
+            winVar['yLineStart'] = event.y
+            winVar['line0'] = winVar['canvas'].create_line(winVar['xLineStart'], winVar['yLineStart'],
+                                                           winVar['xLineStart'],
+                                                           winVar['yLineStart'], width=winVar['penWidth'],
+                                                           fill=winVar['penColor'], arrow=winVar['lineArrow'],
+                                                           dash=winVar['lineDot'])
             cLine0 = {}
-            cLine0['x1'] = xLineStart
-            cLine0['y1'] = yLineStart
-            cLine0['x2'] = xLineStart
-            cLine0['y2'] = yLineStart
-            cLine0['width'] = penWidth
-            cLine0['fill'] = penColor
-            cLine0['arrow'] = lineArrow
-            cLine0['dash'] = lineDot
+            cLine0['x1'] = winVar['xLineStart']
+            cLine0['y1'] = winVar['yLineStart']
+            cLine0['x2'] = winVar['xLineStart']
+            cLine0['y2'] = winVar['yLineStart']
+            cLine0['width'] = winVar['penWidth']
+            cLine0['fill'] = winVar['penColor']
+            cLine0['arrow'] = winVar['lineArrow']
+            cLine0['dash'] = winVar['lineDot']
 
         else:
-            canvas.coords(line0, xLineStart, yLineStart, event.x, event.y)
-            cLine0['x1'] = xLineStart
-            cLine0['y1'] = yLineStart
-            cLine0['x2'] = event.x
-            cLine0['y2'] = event.y
+            winVar['canvas'].coords(winVar['line0'], winVar['xLineStart'], winVar['yLineStart'], event.x, event.y)
+            winVar['cLine0']['x1'] = winVar['xLineStart']
+            winVar['cLine0']['y1'] = winVar['yLineStart']
+            winVar['cLine0']['x2'] = event.x
+            winVar['cLine0']['y2'] = event.y
 
-    elif tool == 4:
-        if xStart == 0 and yStart == 0:
-            xLineStart = event.x
-            yLineStart = event.y
-            line0 = canvas.create_polygon([xLineStart, yLineStart], [xLineStart, yLineStart], [xLineStart, yLineStart],
-                                          [xLineStart, yLineStart],
-                                          width=penWidth, outline=penColor, fill=brushColor)
-            cLine0 = {}
+    elif winVar['tool'] == 4:
+        #rectangle
+        if winVar['xStart'] == 0 and winVar['yStart'] == 0:
+            winVar['xLineStart'] = event.x
+            winVar['yLineStart'] = event.y
+            winVar['line0'] = winVar['canvas'].create_polygon([winVar['xLineStart'], winVar['yLineStart']],
+                                                              [winVar['xLineStart'], winVar['yLineStart']],
+                                                              [winVar['xLineStart'], winVar['yLineStart']],
+                                                              [winVar['xLineStart'], winVar['yLineStart']],
+                                                              width=winVar['penWidth'], outline=winVar['penColor'],
+                                                              fill=winVar['brushColor'])
+            winVar['cLine0'] = {}
         else:
-            canvas.coords(line0, xLineStart, yLineStart, xLineStart, event.y, event.x, event.y, event.x, yLineStart)
-            cLine0 = {}
-            cLine0['x1'] = xLineStart
-            cLine0['y1'] = yLineStart
-            cLine0['x2'] = event.x
-            cLine0['y2'] = yLineStart
-            cLine0['x3'] = event.x
-            cLine0['y3'] = event.y
-            cLine0['x4'] = xLineStart
-            cLine0['y4'] = event.y
+            winVar['canvas'].coords(winVar['line0'], winVar['xLineStart'], winVar['yLineStart'], winVar['xLineStart'],
+                                    event.y, event.x, event.y, event.x, winVar['yLineStart'])
+            winVar['cLine0'] = {}
+            winVar['cLine0']['x1'] = winVar['xLineStart']
+            winVar['cLine0']['y1'] = winVar['yLineStart']
+            winVar['cLine0']['x2'] = event.x
+            winVar['cLine0']['y2'] = winVar['yLineStart']
+            winVar['cLine0']['x3'] = event.x
+            winVar['cLine0']['y3'] = event.y
+            winVar['cLine0']['x4'] = winVar['xLineStart']
+            winVar['cLine0']['y4'] = event.y
 
-            cLine0['width'] = penWidth
-            cLine0['outline'] = penColor
-            cLine0['fill'] = brushColor
-    elif tool == 8:
+            winVar['cLine0']['width'] = winVar['penWidth']
+            winVar['cLine0']['outline'] = winVar['penColor']
+            winVar['cLine0']['fill'] = winVar['brushColor']
+    elif winVar['tool'] == 8:
         # draging figure
 
-        xo1, yo1, xo2, yo2 = coords(canvas, selFig['Obj'][0])
+        xo1, yo1, xo2, yo2 = coords(winVar['canvas'], winVar['selFig']['Obj'][0])
         if math.sqrt((event.x - xo2) ** 2 + (event.y - yo2) ** 2) < 20:
             print("!!!!!!!!!!!!!!!!!!!!!!")
-            x1 = selFig['Obj'][2]['x1']
-            y1 = selFig['Obj'][2]['y1']
-            x2 = selFig['Obj'][2]['x2']
-            y2 = selFig['Obj'][2]['y2']
+            x1 = winVar['selFig']['Obj'][2]['x1']
+            y1 = winVar['selFig']['Obj'][2]['y1']
+            x2 = winVar['selFig']['Obj'][2]['x2']
+            y2 = winVar['selFig']['Obj'][2]['y2']
 
             if x2 > x1 and y2 > y1:
                 print(11111111)
-                canvas.coords(selFig['Obj'][0], x1, y1, event.x, event.y)
-                canvas.coords(selFig['0'], xo1 - 1, yo1 - 1, event.x + 1, event.y + 1)
-                canvas.coords(selFig['D'], event.x - 10, (yo1 + event.y) // 2 - 10, event.x + 10,
-                              (yo1 + event.y) // 2 + 10)
-                selFig['Obj'][2]['x2'] = event.x
-                selFig['Obj'][2]['y2'] = event.y
+                winVar['canvas'].coords(winVar['selFig']['Obj'][0], x1, y1, event.x, event.y)
+                winVar['canvas'].coords(winVar['selFig']['0'], xo1 - 1, yo1 - 1, event.x + 1, event.y + 1)
+                winVar['canvas'].coords(winVar['selFig']['D'], event.x - 10, (yo1 + event.y) // 2 - 10, event.x + 10,
+                                        (yo1 + event.y) // 2 + 10)
+                winVar['selFig']['Obj'][2]['x2'] = event.x
+                winVar['selFig']['Obj'][2]['y2'] = event.y
             elif x2 < x1 and y2 > y1:
-                canvas.coords(selFig['Obj'][0], event.x, y1, x2, event.y)
-                canvas.coords(selFig['0'], xo1 - 1, yo1 - 1, event.x + 1, event.y + 1)
-                canvas.coords(selFig['D'], event.x - 10, (yo1 + event.y) // 2 - 10, event.x + 10,
-                              (yo1 + event.y) // 2 + 10)
-                selFig['Obj'][2]['x1'] = event.x
-                selFig['Obj'][2]['y2'] = event.y
+                winVar['canvas'].coords(winVar['selFig']['Obj'][0], event.x, y1, x2, event.y)
+                winVar['canvas'].coords(winVar['selFig']['0'], xo1 - 1, yo1 - 1, event.x + 1, event.y + 1)
+                winVar['canvas'].coords(winVar['selFig']['D'], event.x - 10, (yo1 + event.y) // 2 - 10, event.x + 10,
+                                        (yo1 + event.y) // 2 + 10)
+                winVar['selFig']['Obj'][2]['x1'] = event.x
+                winVar['selFig']['Obj'][2]['y2'] = event.y
             elif x2 < x1 and y2 < y1:
-                canvas.coords(selFig['Obj'][0], event.x, event.y, x2, y2)
-                canvas.coords(selFig['0'], xo1 - 1, yo1 - 1, event.x + 1, event.y + 1)
-                canvas.coords(selFig['D'], event.x - 10, (yo1 + event.y) // 2 - 10, event.x + 10,
-                              (yo1 + event.y) // 2 + 10)
-                selFig['Obj'][2]['x1'] = event.x
-                selFig['Obj'][2]['y1'] = event.y
+                winVar['canvas'].coords(winVar['selFig']['Obj'][0], event.x, event.y, x2, y2)
+                winVar['canvas'].coords(winVar['selFig']['0'], xo1 - 1, yo1 - 1, event.x + 1, event.y + 1)
+                winVar['canvas'].coords(winVar['selFig']['D'], event.x - 10, (yo1 + event.y) // 2 - 10, event.x + 10,
+                                        (yo1 + event.y) // 2 + 10)
+                winVar['selFig']['Obj'][2]['x1'] = event.x
+                winVar['selFig']['Obj'][2]['y1'] = event.y
             elif x2 > x1 and y2 < y1:
-                canvas.coords(selFig['Obj'][0], x1, event.y, event.x, y2)
-                canvas.coords(selFig['0'], xo1 - 1, yo1 - 1, event.x + 1, event.y + 1)
-                canvas.coords(selFig['D'], event.x - 10, (yo1 + event.y) // 2 - 10, event.x + 10,
-                              (yo1 + event.y) // 2 + 10)
-                selFig['Obj'][2]['x2'] = event.x
-                selFig['Obj'][2]['y1'] = event.y
+                winVar['canvas'].coords(winVar['selFig']['Obj'][0], x1, event.y, event.x, y2)
+                winVar['canvas'].coords(winVar['selFig']['0'], xo1 - 1, yo1 - 1, event.x + 1, event.y + 1)
+                winVar['canvas'].coords(winVar['selFig']['D'], event.x - 10, (yo1 + event.y) // 2 - 10, event.x + 10,
+                                        (yo1 + event.y) // 2 + 10)
+                winVar['selFig']['Obj'][2]['x2'] = event.x
+                winVar['selFig']['Obj'][2]['y1'] = event.y
 
             # x3 = event.x
             # y3 = event.y
-            # canvas.coords(selFig['Obj'][0], x1, y1, x2, y2)
-            # canvas.coords(selFig['0'], x1 - 1, y1 - 1, x2 + 1, y2 + 1)
+            # winVar['canvas'].coords(selFig['Obj'][0], x1, y1, x2, y2)
+            # winVar['canvas'].coords(selFig['0'], x1 - 1, y1 - 1, x2 + 1, y2 + 1)
             # selFig['Obj'][2]['x1'] = x1
             # selFig['Obj'][2]['y1'] = y1
             # selFig['Obj'][2]['x2'] = x2
@@ -364,190 +345,152 @@ def mouseMove(event):
 
             xx = "resize"
         else:
-            x1, y1, x2, y2 = coords(canvas, selFig['Obj'][0])
+            x1, y1, x2, y2 = coords(winVar['canvas'], winVar['selFig']['Obj'][0])
             if (event.x > x1) and (event.x < x2) and (event.y > y1) and (event.y < y2):
-                if selFig['Obj'][1] == 'rectangle':
-                    x1 = selFig['Obj'][2]['x1']
-                    y1 = selFig['Obj'][2]['y1']
-                    x2 = selFig['Obj'][2]['x2']
-                    y2 = selFig['Obj'][2]['y2']
-                    x3 = selFig['Obj'][2]['x3']
-                    y3 = selFig['Obj'][2]['y3']
-                    x4 = selFig['Obj'][2]['x4']
-                    y4 = selFig['Obj'][2]['y4']
-                    dx = event.x - xStart
-                    dy = event.y - yStart
-                    selFig['Obj'][2]['x1'] = x1 + dx
-                    selFig['Obj'][2]['y1'] = y1 + dy
-                    selFig['Obj'][2]['x2'] = x2 + dx
-                    selFig['Obj'][2]['y2'] = y2 + dy
-                    selFig['Obj'][2]['x3'] = x3 + dx
-                    selFig['Obj'][2]['y3'] = y3 + dy
-                    selFig['Obj'][2]['x4'] = x4 + dx
-                    selFig['Obj'][2]['y4'] = y4 + dy
-                    # moveObjectBy(canvas, selFig['Obj'][0], dx, dy)
-                    # canvas.coords(selFig['0'], x1 - 1, y1 - 1, x3 + 1, y3 + 1)
-                    # canvas.coords(selFig['SE'], max(x3,x1) - 10, max(y3,y1) - 10, max(x3,x1) + 10, max(y3,y1) + 10)
-                elif selFig['Obj'][1] == 'line':
-                    x1 = selFig['Obj'][2]['x1']
-                    y1 = selFig['Obj'][2]['y1']
-                    x3 = selFig['Obj'][2]['x2']
-                    y3 = selFig['Obj'][2]['y2']
-                    dx = event.x - xStart
-                    dy = event.y - yStart
-                    selFig['Obj'][2]['x1'] = x1 + dx
-                    selFig['Obj'][2]['y1'] = y1 + dy
-                    selFig['Obj'][2]['x2'] = x3 + dx
-                    selFig['Obj'][2]['y2'] = y3 + dy
-                elif selFig['Obj'][1] == 'image':
-                    x = selFig['Obj'][2]['x']
-                    y = selFig['Obj'][2]['y']
-                    w = selFig['Obj'][2]['width']
-                    h = selFig['Obj'][2]['height']
-                    dx = event.x - xStart
-                    dy = event.y - yStart
-                    selFig['Obj'][2]['x'] = x + dx
-                    selFig['Obj'][2]['y'] = y + dy
-                    selFig['Obj'][2]['width'] = w
-                    selFig['Obj'][2]['height'] = w
-                    canvas.coords(selFig['Obj'][0], x + dx, y + dy)
-                    canvas.coords(selFig['0'], coords(canvas, selFig['Obj'][0]))
-                    x1, y1, x2, y2 = coords(canvas, selFig['Obj'][0])
-                    canvas.coords(selFig['D'], x2 - 10, abs(y1 + y2) // 2 - 10, x2 + 10, abs(y1 + y2) // 2 + 10)
+                if winVar['selFig']['Obj'][1] == 'rectangle':
+                    x1 = winVar['selFig']['Obj'][2]['x1']
+                    y1 = winVar['selFig']['Obj'][2]['y1']
+                    x2 = winVar['selFig']['Obj'][2]['x2']
+                    y2 = winVar['selFig']['Obj'][2]['y2']
+                    x3 = winVar['selFig']['Obj'][2]['x3']
+                    y3 = winVar['selFig']['Obj'][2]['y3']
+                    x4 = winVar['selFig']['Obj'][2]['x4']
+                    y4 = winVar['selFig']['Obj'][2]['y4']
+                    dx = event.x - winVar['xStart']
+                    dy = event.y - winVar['yStart']
+                    winVar['selFig']['Obj'][2]['x1'] = x1 + dx
+                    winVar['selFig']['Obj'][2]['y1'] = y1 + dy
+                    winVar['selFig']['Obj'][2]['x2'] = x2 + dx
+                    winVar['selFig']['Obj'][2]['y2'] = y2 + dy
+                    winVar['selFig']['Obj'][2]['x3'] = x3 + dx
+                    winVar['selFig']['Obj'][2]['y3'] = y3 + dy
+                    winVar['selFig']['Obj'][2]['x4'] = x4 + dx
+                    winVar['selFig']['Obj'][2]['y4'] = y4 + dy
+                    # moveObjectBy(canvas,  winVar['selFig']['Obj'][0], dx, dy)
+                    # winVar['canvas'].coords( winVar['selFig']['0'], x1 - 1, y1 - 1, x3 + 1, y3 + 1)
+                    # winVar['canvas'].coords( winVar['selFig']['SE'], max(x3,x1) - 10, max(y3,y1) - 10, max(x3,x1) + 10, max(y3,y1) + 10)
+                elif winVar['selFig']['Obj'][1] == 'line':
+                    x1 = winVar['selFig']['Obj'][2]['x1']
+                    y1 = winVar['selFig']['Obj'][2]['y1']
+                    x3 = winVar['selFig']['Obj'][2]['x2']
+                    y3 = winVar['selFig']['Obj'][2]['y2']
+                    dx = event.x - winVar['xStart']
+                    dy = event.y - winVar['yStart']
+                    winVar['selFig']['Obj'][2]['x1'] = x1 + dx
+                    winVar['selFig']['Obj'][2]['y1'] = y1 + dy
+                    winVar['selFig']['Obj'][2]['x2'] = x3 + dx
+                    winVar['selFig']['Obj'][2]['y2'] = y3 + dy
+                elif winVar['selFig']['Obj'][1] == 'image':
+                    x = winVar['selFig']['Obj'][2]['x']
+                    y = winVar['selFig']['Obj'][2]['y']
+                    w = winVar['selFig']['Obj'][2]['width']
+                    h = winVar['selFig']['Obj'][2]['height']
+                    dx = event.x - winVar['xStart']
+                    dy = event.y - winVar['yStart']
+                    winVar['selFig']['Obj'][2]['x'] = x + dx
+                    winVar['selFig']['Obj'][2]['y'] = y + dy
+                    winVar['selFig']['Obj'][2]['width'] = w
+                    winVar['selFig']['Obj'][2]['height'] = w
+                    winVar['canvas'].coords(winVar['selFig']['Obj'][0], x + dx, y + dy)
+                    winVar['canvas'].coords(winVar['selFig']['0'], coords(winVar['canvas'], winVar['selFig']['Obj'][0]))
+                    x1, y1, x2, y2 = coords(winVar['canvas'], winVar['selFig']['Obj'][0])
+                    winVar['canvas'].coords(winVar['selFig']['D'], x2 - 10, abs(y1 + y2) // 2 - 10, x2 + 10,
+                                            abs(y1 + y2) // 2 + 10)
 
-                if xx != "resize" and selFig['Obj'][1] != 'image':
-                    moveObjectBy(canvas, selFig['Obj'][0], dx, dy)
-                    canvas.coords(selFig['0'], coords(canvas, selFig['Obj'][0]))
-                    x1, y1, x2, y2 = coords(canvas, selFig['Obj'][0])
-                    canvas.coords(selFig['D'], x2 - 10, abs(y1 + y2) // 2 - 10, x2 + 10, abs(y1 + y2) // 2 + 10)
-                    # canvas.coords(selFig['SE'], max(x3, x1) - 10, max(y3, y1) - 10, max(x3, x1) + 10, max(y3, y1) + 10)
+                if xx != "resize" and winVar['selFig']['Obj'][1] != 'image':
+                    moveObjectBy(winVar['canvas'], winVar['selFig']['Obj'][0], dx, dy)
+                    winVar['canvas'].coords(winVar['selFig']['0'], coords(winVar['canvas'], winVar['selFig']['Obj'][0]))
+                    x1, y1, x2, y2 = coords(winVar['canvas'], winVar['selFig']['Obj'][0])
+                    winVar['canvas'].coords(winVar['selFig']['D'], x2 - 10, abs(y1 + y2) // 2 - 10, x2 + 10,
+                                            abs(y1 + y2) // 2 + 10)
+                    # winVar['canvas'].coords( winVar['selFig']['SE'], max(x3, x1) - 10, max(y3, y1) - 10, max(x3, x1) + 10, max(y3, y1) + 10)
 
-    if tool != 8:
-        if selFig != {}:
-            canvas.coords(selFig, 100000, 100000, 1000001, 100001)
+    if winVar['tool'] != 8:
+        if winVar['selFig'] != {}:
+            winVar['canvas'].coords(winVar['selFig'], 100000, 100000, 1000001, 100001)
             # selFig = {}
 
-    xStart = event.x
-    yStart = event.y
+    winVar['xStart'] = event.x
+    winVar['yStart'] = event.y
 
 
-def mouseMoveNoButton(event):
-    global selFig, tool
-    if tool == 8:
+def mouseMoveNoButton(event, winVar):
+    if winVar['tool'] == 8:
         # change cursor
         try:
 
-            if not selFig['Obj'] is None:
-                x1, y1, x2, y2 = coords(canvas, selFig['0'])
+            if not winVar['selFig']['Obj'] is None:
+                x1, y1, x2, y2 = coords(winVar['canvas'], winVar['selFig']['0'])
                 if (event.x > x1) and (event.x < x2) and (event.y > y1) and (event.y < y2):
-                    canvas.config(cursor="fleur")
+                    winVar['canvas'].config(cursor="fleur")
                 else:
-                    canvas.config(cursor="tcross")
+                    winVar['canvas'].config(cursor="tcross")
         except:
             pass
 
 
-def mouseUp(event):
-    global xStart, yStart, cLine0, line0, xLineStart, yLineStart, selFig
-    xStart = 0
-    yStart = 0
+def mouseUp(event, winVar):
+    # global xStart, yStart, cLine0, line0, xLineStart, yLineStart, selFig
+    winVar['xStart'] = 0
+    winVar['yStart'] = 0
     fl = False
-    if tool == 3 or tool == 4:
+    if winVar['tool'] == 3 or winVar['tool'] == 4:
         k = []
-        k.append(line0)
-        if tool == 3:
+        k.append(winVar['line0'])
+        if winVar['tool'] == 3:
             k.append("line")
         else:
             k.append("rectangle")
-        k.append(cLine0)
-        figures.append(k)
-        print(figures)
-    print(selFig['D'])
-    if coords(canvas, selFig['D']) != None:
-        x1, y1, x2, y2 = coords(canvas, selFig['D'])
+        k.append(winVar['cLine0'])
+        winVar['figures'].append(k)
+        print(winVar['figures'])
+    print(winVar['selFig']['D'])
+    if coords(winVar['canvas'], winVar['selFig']['D']) != None:
+        x1, y1, x2, y2 = coords(winVar['canvas'], winVar['selFig']['D'])
         if (event.x > x1) and (event.x < x2) and (event.y > y1) and (event.y < y2):
-            canvas.delete(selFig['Obj'][0])
-            canvas.coords(selFig['0'], 10000, 10000, 10001, 10001)
-            canvas.coords(selFig['D'], 10000, 10000, 10001, 10001)
-            figures.remove(selFig['Obj'])
+            winVar['canvas'].delete(winVar['selFig']['Obj'][0])
+            winVar['canvas'].coords(winVar['selFig']['0'], 10000, 10000, 10001, 10001)
+            winVar['canvas'].coords(winVar['selFig']['D'], 10000, 10000, 10001, 10001)
+            winVar['figures'].remove(winVar['selFig']['Obj'])
 
-    # if tool == 8:
-    #     # select object
-    #
-    #     for fig in figures:
-    #         x1, y1, x2, y2 = coords(canvas, fig[0])
-    #         if (event.x > x1) and (event.x < x2) and (event.y > y1) and (event.y < y2):
-    #             # deleteObject(canvas, selFig)
-    #             if selFig == {}:
-    #                 pass
-    #                 # makeSelFig(10000, 10000, 10001, 10001, fig)
-    #             else:
-    #                 canvas.coords(selFig['0'], x1 - 1, y1 - 1, x2 + 1, y2 + 1)
-    #                 # canvas.coords(selFig['NW'], x1 - 10, y1 - 10, x1 + 10, y1 + 10)
-    #                 # canvas.coords(selFig['NE'], x2 - 10, y1 - 10, x2 + 10, y1 + 10)
-    #                 canvas.coords(selFig['SE'], x2 - 10, y2 - 10, x2 + 10, y2 + 10)
-    #                 # canvas.coords(selFig['SW'], x1 - 10, y2 - 10, x1 + 10, y2 + 10)
-    #                 # canvas.coords(selFig['S'], abs(x1 + x2) // 2 - 10, y2 - 10, abs(x1 + x2) // 2 + 10, y2 + 10)
-    #                 # canvas.coords(selFig['E'], x2 - 10, abs(y1 + y2) // 2 - 10, x2 + 10, abs(y1 + y2) // 2 + 10)
-    #
-    #                 selFig['Obj'] = fig
-    #             fl = True
-    #             print("selFig ->", selFig)
-    #             print("LEN ->", len(selFig))
-    #             break
-    #
-    #
-    # # repeat code
-    # if tool == 8:
-    #     # change cursor
-    #     print (selFig)
-    #     if selFig['0'] != None:
-    #         try:
-    #             x1, y1, x2, y2 = coords(canvas, selFig['0'])
-    #             if (event.x > x1) and (event.x < x2) and (event.y > y1) and (event.y < y2):
-    #                 canvas.config(cursor="fleur")
-    #             else:
-    #                 canvas.config(cursor="tcross")
-    #         except:
-    #             pass
-    # if not fl:
-    #     pass
-    #     #selFig = {}
-    xLineStart = 0
-    yLineStart = 0
+    winVar['xLineStart'] = 0
+    winVar['yLineStart'] = 0
 
 
-def create_canvas(frame):
-    canvases.append(Canvas(frame))
+#
+# def create_canvas(frame):
+#     canvases.append(Canvas(frame))
 
 
-def makeSelFig(x1, y1, x2, y2, Obj):
-    global canvas, selFig
+def makeSelFig(winVar, x1, y1, x2, y2, Obj):
+    canvas = winVar['canvas']
     # selFig = {}
-    selFig['0'] = canvas.create_rectangle(x1 - 1, y1 - 1, x2 + 1, y2 + 1, width=1, outline="red", dash=(5, 5))
+    winVar['selFig']['0'] = winVar['canvas'].create_rectangle(x1 - 1, y1 - 1, x2 + 1, y2 + 1, width=1, outline="red",
+                                                              dash=(5, 5))
     # selFig['0'].config(cursor="fleur")
-    # selFig['NW'] = canvas.create_oval(x1 - 10, y1 - 10, x1 + 10, y1 + 10, width=1, outline="red",                                      fill="yellow")
-    # selFig['NE'] = canvas.create_oval(x2 - 10, y1 - 10, x2 + 10, y1 + 10, width=1, outline="red",                                      fill="yellow")
-    # selFig['SE'] = canvas.create_rectangle(x2 - 20, y2 - 20, x2 + 1, y2 + 1, width=1, outline="red")
+    # selFig['NW'] = winVar['canvas'].create_oval(x1 - 10, y1 - 10, x1 + 10, y1 + 10, width=1, outline="red",                                      fill="yellow")
+    # selFig['NE'] = winVar['canvas'].create_oval(x2 - 10, y1 - 10, x2 + 10, y1 + 10, width=1, outline="red",                                      fill="yellow")
+    # selFig['SE'] = winVar['canvas'].create_rectangle(x2 - 20, y2 - 20, x2 + 1, y2 + 1, width=1, outline="red")
 
-    # selFig['SW'] = canvas.create_oval(x1 - 10, y2 - 10, x1 + 10, y2 + 10, width=1, outline="red",                                      fill="yellow")
-    # selFig['S'] = canvas.create_rectangle(abs(x1 + x2) // 2 - 10, y2 - 10, abs(x1 + x2) // 2 + 10,                                     y2 + 10, width=1, outline="red", fill="yellow")
-    # selFig['E'] = canvas.create_rectangle(x2 - 10, abs(y1 + y2) // 2 - 10, x2 + 10,                                          abs(y1 + y2) // 2 + 10, width=1, outline="red", fill="yellow")
-    selFig['D'] = canvas.create_rectangle(x2 - 10, abs(y1 + y2) // 2 - 10, x2 + 10, abs(y1 + y2) // 2 + 10, width=1,
-                                          outline="red", fill="red")
-    selFig['Obj'] = Obj
+    # selFig['SW'] = winVar['canvas'].create_oval(x1 - 10, y2 - 10, x1 + 10, y2 + 10, width=1, outline="red",                                      fill="yellow")
+    # selFig['S'] = winVar['canvas'].create_rectangle(abs(x1 + x2) // 2 - 10, y2 - 10, abs(x1 + x2) // 2 + 10,                                     y2 + 10, width=1, outline="red", fill="yellow")
+    # selFig['E'] = winVar['canvas'].create_rectangle(x2 - 10, abs(y1 + y2) // 2 - 10, x2 + 10,                                          abs(y1 + y2) // 2 + 10, width=1, outline="red", fill="yellow")
+    winVar['selFig']['D'] = winVar['canvas'].create_rectangle(x2 - 10, abs(y1 + y2) // 2 - 10, x2 + 10,
+                                                              abs(y1 + y2) // 2 + 10, width=1,
+                                                              outline="red", fill="red")
+    winVar['selFig']['Obj'] = Obj
 
 
-def expanse(d):
-    global canvas, canvas_width, canvas_height, xc, yc
+def expanse(d, winVar):
+    # global canvas, canvas_width, canvas_height, xc, yc
     if d == 'u':
-        canvas_height += 100
-        yc -= 100
+        winVar['canvas_height'] += 100
+        winVar['yc'] -= 100
     else:
-        canvas_width += 100
-        xc -= 100
-    canvas.config(width=canvas_width, height=canvas_height)
-    canvas.place(x=xc, y=yc)
+        winVar['canvas_width'] += 100
+        winVar['xc'] -= 100
+    winVar['canvas'].config(width=winVar['canvas_width'], height=winVar['canvas_height'])
+    winVar['canvas'].place(x=winVar['xc'], y=winVar['yc'])
 
 
 def noSelectAll(frame1):
@@ -556,28 +499,65 @@ def noSelectAll(frame1):
 
 
 def main():
-    global canvas, color, canvas_width, canvas_height, selFig
-    global window_width, window_height
+    winVar = {}
     root = Tk()
-    screen_width = root.winfo_screenwidth()
-    screen_height = root.winfo_screenheight() - 75
-    root.geometry('' + str(screen_width) + 'x' + str(screen_height) + '+-7+0')
+
+    winVar['screen_width'] = root.winfo_screenwidth() - 200  # TODO
+    winVar['screen_height'] = root.winfo_screenheight() - 75
+    # TODO
+    root.geometry('' + str(winVar['screen_width']) + 'x' + str(winVar['screen_height']) + '+200+0')
+    # root.geometry('' + str(winVar['screen_width']) + 'x' + str(winVar['screen_height']) + '+-7+0')
     root.title("WhiteBoard")
     frame = Frame(root, relief=RAISED, borderwidth=1)
     frame.pack(fill=BOTH, expand=True)
-    canvas = Canvas(frame, bg=fonColor)
-    canvas_width = screen_width + 50
-    canvas_height = screen_height + 50
-    canvas.place(x=xc, y=yc)
-    canvas.config(width=canvas_width, height=canvas_height)
-    canvas.config(cursor="tcross")
-    grid(canvas, gridColor, screen_width + 50, screen_height + 50, 50, grList)
-    # Кнопки розширення полотна
-    btnDown = Button(text='V', width=4, height=1, command=lambda: expanse('u'))
-    btnRight = Button(text='>', width=2, height=2, command=lambda: expanse('r'))
 
-    btnDown.place(x=screen_width // 2, y=screen_height - 60)
-    btnRight.place(x=screen_width - 25, y=screen_height // 2)
+    winVar['fonColor'] = "#E9FBCA"
+    winVar['brushColor'] = ""
+    winVar['btnActiveColor'] = "#331177"
+    winVar['canvas'] = Canvas(frame, bg=winVar['fonColor'])
+    winVar['window_height'] = root.winfo_height()
+    winVar['window_width'] = root.winfo_width()
+
+
+    winVar['xc'] = 0
+    winVar['yc'] = 0
+    winVar['canvas_height'] = winVar['screen_height'] + 50
+    winVar['canvas_width'] = winVar['screen_width'] + 50
+    winVar['canvas'].config(cursor="tcross")
+    winVar['canvas'].config(width=winVar['canvas_width'], height=winVar['canvas_height'])
+    winVar['canvas'].place(x=winVar['xc'], y=winVar['yc'])
+    winVar['canvases'] = []
+    winVar['cLine0'] = {'x1': 0, 'y1': 0, 'x2': 0, 'y2': 0}
+
+    winVar['cpFigures'] = []
+    winVar['errSize'] = 10
+    winVar['figures'] = []
+
+    winVar['gridColor'] = "#D0D0D0"
+    winVar['grList'] = []
+
+    winVar['lineArrow'] = ""
+    winVar['lineDot'] = ''
+    winVar['penColor'] = "#0000FF"
+    winVar['penWidth'] = 2
+    winVar['selFig'] = {}
+    winVar['step'] = 50
+    winVar['tool'] = 1
+
+    winVar['xLineStart'] = 0
+    winVar['xStart'] = 0
+
+    winVar['yLineStart'] = 0
+    winVar['yStart'] = 0
+    winVar['images'] = []
+
+    grid(winVar)
+    # Кнопки розширення полотна
+    btnDown = Button(text='V', width=4, height=1, command=lambda d='u', winVar=winVar: expanse(d, winVar))
+    btnRight = Button(text='>', width=2, height=2, command=lambda d='r', winVar=winVar: expanse(d, winVar))
+
+    btnDown.place(x=winVar['screen_width'] // 2, y=winVar['screen_height'] - 60)
+    btnRight.place(x=winVar['screen_width'] - 25, y=winVar['screen_height'] // 2)
 
     frame1 = Frame(frame, relief=RAISED, borderwidth=1)
     frame1.pack(side=BOTTOM, fill=BOTH)
@@ -593,118 +573,98 @@ def main():
     for i in images_path:
         images.append(ImageTk.PhotoImage(file=images_path[i]))
 
-    def on_move_or_resize():
+    def on_move_or_resize(event, root, winVar):
         # If windows is resizing
-        global window_width, window_height
         w = root.winfo_width()
         h = root.winfo_height()
-        window_width, window_height = w, h
+        winVar['window_width'], winVar['window_height'] = w, h
         btnDown.place(x=w // 2, y=h - 60)
         btnRight.place(x=w - 25, y=h // 2)
 
     def btnHandClick():
         print('Hand')
-        global tool
-        tool = 7
+        winVar['tool'] = 7
         noSelectAll(frame1)
-        btnHand.config(bg=btnActiveColor)
+        btnHand.config(bg=winVar['btnActiveColor'])
         deleteSelectionLinks()
 
     def btnAddPageClick(root):
-        global selFig
         print('Add Page')
         deleteSelectionLinks()
-        print("selFig ->", selFig)
-        print("LEN ->", len(selFig))
+        print("selFig ->", winVar['selFig'])
+        print("LEN ->", len(winVar['selFig']))
 
     def btnLineClick():
         print('Line')
-        global tool
-        tool = 3
+        winVar['tool'] = 3
         noSelectAll(frame1)
-        btnLine.config(bg=btnActiveColor)
+        btnLine.config(bg=winVar['btnActiveColor'])
         deleteSelectionLinks()
 
     def btnErClick():
         print('Erazer')
-        global tool
-        tool = 2
+        winVar['tool'] = 2
         noSelectAll(frame1)
-        btnEr.config(bg=btnActiveColor)
+        btnEr.config(bg=winVar['btnActiveColor'])
         deleteSelectionLinks()
 
     def btnRectClick():
         print('Rect')
-        global tool
-        global tool, brushColor
-        if tool == 4:
-            if brushColor == penColor:
-                brushColor = ""
+
+        if winVar['tool'] == 4:
+            if winVar['brushColor'] == winVar['penColor']:
+                winVar['brushColor'] = ""
                 btnRect.config(image=images[5])
             else:
-                brushColor = penColor
+                winVar['brushColor'] = winVar['penColor']
                 btnRect.config(image=images[4])
         print('Pen')
-        tool = 4
+        winVar['tool'] = 4
         noSelectAll(frame1)
-        btnRect.config(bg=btnActiveColor)
+        btnRect.config(bg=winVar['btnActiveColor'])
         deleteSelectionLinks()
 
         # selFig = {}
 
     def deleteSelectionLinks():
-        global selFig, canvas
-        deleteObject(canvas, selFig['0'])
-        deleteObject(canvas, selFig['D'])
-        # deleteObject(canvas, selFig['NW'])
-        # deleteObject(canvas, selFig['NE'])
-        # deleteObject(canvas, selFig['SE'])
-        # deleteObject(canvas, selFig['SW'])
-        # deleteObject(canvas, selFig['S'])
-        # deleteObject(canvas, selFig['E'])
+        deleteObject(winVar['canvas'], winVar['selFig']['0'])
+        deleteObject(winVar['canvas'], winVar['selFig']['D'])
 
     def btnPenClick():
-        global tool
-        tool = 1
+        winVar['tool'] = 1
         noSelectAll(frame1)
-        btnPen.config(bg=btnActiveColor)
+        btnPen.config(bg=winVar['btnActiveColor'])
         deleteSelectionLinks()
 
     def btnArClick():
-        global tool, selFig
-        tool = 8
+        winVar['tool'] = 8
         noSelectAll(frame1)
-        btnAr.config(bg=btnActiveColor)
+        btnAr.config(bg=winVar['btnActiveColor'])
         deleteSelectionLinks()
-        makeSelFig(10000, 10000, 10001, 10001, None)
+        makeSelFig(winVar, 10000, 10000, 10001, 10001, None)
 
     def btnColorSelectClick():
         print("Select color")
-        global penColor
-        penColor = colorchooser.askcolor()[1]
+        winVar['penColor'] = colorchooser.askcolor()[1]
         deleteSelectionLinks()
 
-    def widthClick(d):
-        global penWidth
-        penWidth = d
+    def widthClick(d, winVar):
+        winVar['penWidth'] = d
         frameWidth.pack_forget()
         deleteSelectionLinks()
 
-    def arrowClick(d):
-        global lineArrow
-        lineArrow = d
+    def arrowClick(d, winVar):
+        winVar['lineArrow'] = d
         frameArrow.pack_forget()
         deleteSelectionLinks()
 
-    def dotClick(d):
-        global lineDot, selFig
-        lineDot = d
+    def dotClick(d, winVar):
+        winVar['lineDot'] = d
         frameDot.pack_forget()
         deleteSelectionLinks()
 
     def btnWidthSelectClick():
         print("Select width")
-        global penWidth
         frameWidth.pack(side=LEFT, padx=2, pady=2)
         deleteSelectionLinks()
 
@@ -722,13 +682,6 @@ def main():
         print("Select dash")
         frameDot.pack(side=LEFT, padx=2, pady=2)
         deleteSelectionLinks()
-        # image = pyautogui.screenshot(region=(0, 0, screen_width, screen_height))
-        #
-        # image = ImageTk.PhotoImage(image)
-        # root.image = image
-        # im = canvas.create_image(50, 10, image=image, state=NORMAL, anchor=NW)
-        # canvas.create_line(22,33,444,444)
-        # canvas.update()
 
     # Buttons for main panel
     btnAr = Button(frame1, image=images[28], command=btnArClick, font="10")
@@ -745,9 +698,9 @@ def main():
     btnRect.pack(side=LEFT, padx=2, pady=2)
     btnOptions = Button(frame1, image=images[23], command=btnOptionsClick, font="10")
     btnOptions.pack(side=LEFT, padx=2, pady=2)
-    btnScr = Button(frame1, image=images[26], command=lambda: btnScrClick(root, canvas, figures, screen_width, screen_height, window_width, window_height), font="10")
+    btnScr = Button(frame1, image=images[26], command=lambda: btnScrClick(root, winVar))
     btnScr.pack(side=LEFT, padx=2, pady=2)
-    btnAddPage = Button(frame1, image=images[27], command=lambda: btnAddPageClick(root), font="10")
+    btnAddPage = Button(frame1, image=images[27], command=lambda: btnAddPageClick(root, winVar), font="10")
     btnAddPage.pack(side=LEFT, padx=2, pady=2)
 
     # Buttons for main panel switching another panels
@@ -760,63 +713,67 @@ def main():
     btnDotSelect = Button(frame1, image=images[19], command=btnDotSelectClick, font="10")
     btnDotSelect.pack(side=LEFT, padx=2, pady=2)
 
-    btnSave = Button(frame1, image=images[25], command=save, font="10")
+    btnSave = Button(frame1, image=images[25], command=lambda winVar=winVar: save(winVar), font="10")
     btnSave.pack(side=LEFT, padx=2, pady=2)
-    btnLoad = Button(frame1, image=images[24], command=lambda: load(canvas, root), font="10")
+    btnLoad = Button(frame1, image=images[24], command=lambda root=root, winVar=winVar: load(root, winVar), font="10")
     btnLoad.pack(side=LEFT, padx=2, pady=2)
 
     # Panel select width arrow
     frameWidth = Frame(frame1)
     frameWidth.pack_forget()
-    btnWidth2 = Button(frameWidth, image=images[8], command=lambda: widthClick(2), font="10")
+    btnWidth2 = Button(frameWidth, image=images[8], command=lambda: widthClick(2, winVar), font="10")
     btnWidth2.pack(side=LEFT, padx=2, pady=2)
-    btnWidth4 = Button(frameWidth, image=images[9], command=lambda: widthClick(4), font="10")
+    btnWidth4 = Button(frameWidth, image=images[9], command=lambda: widthClick(4, winVar), font="10")
     btnWidth4.pack(side=LEFT, padx=2, pady=2)
-    btnWidth8 = Button(frameWidth, image=images[10], command=lambda: widthClick(6), font="10")
+    btnWidth8 = Button(frameWidth, image=images[10], command=lambda: widthClick(6, winVar), font="10")
     btnWidth8.pack(side=LEFT, padx=2, pady=2)
-    btnWidth12 = Button(frameWidth, image=images[11], command=lambda: widthClick(8), font="10")
+    btnWidth12 = Button(frameWidth, image=images[11], command=lambda: widthClick(8, winVar), font="10")
     btnWidth12.pack(side=LEFT, padx=2, pady=2)
-    btnWidth16 = Button(frameWidth, image=images[12], command=lambda: widthClick(10), font="12")
+    btnWidth16 = Button(frameWidth, image=images[12], command=lambda: widthClick(10, winVar), font="12")
     btnWidth16.pack(side=LEFT, padx=2, pady=2)
-    btnWidth20 = Button(frameWidth, image=images[13], command=lambda: widthClick(12), font="14")
+    btnWidth20 = Button(frameWidth, image=images[13], command=lambda: widthClick(12, winVar), font="14")
     btnWidth20.pack(side=LEFT, padx=2, pady=2)
     btnWidth24 = Button(frameWidth, image=images[14], command=lambda: widthClick(16), font="16")
     btnWidth24.pack(side=LEFT, padx=2, pady=2)
     frameArrow = Frame(frame1)
     frameArrow.pack_forget()
-    btnArrow1 = Button(frameArrow, image=images[16], command=lambda: arrowClick(''), font="10")
+    btnArrow1 = Button(frameArrow, image=images[16], command=lambda d='', winVar=winVar: arrowClick(d, winVar),
+                       font="10")
     btnArrow1.pack(side=LEFT, padx=2, pady=2)
-    btnArrow2 = Button(frameArrow, image=images[17], command=lambda: arrowClick(LAST), font="10")
+    btnArrow2 = Button(frameArrow, image=images[17], command=lambda d=LAST, winVar=winVar: arrowClick(d, winVar),
+                       font="10")
     btnArrow2.pack(side=LEFT, padx=2, pady=2)
-    btnArrow3 = Button(frameArrow, image=images[18], command=lambda: arrowClick(BOTH), font="10")
+    btnArrow3 = Button(frameArrow, image=images[18], command=lambda d=BOTH, winVar=winVar: arrowClick(d, winVar),
+                       font="10")
     btnArrow3.pack(side=LEFT, padx=2, pady=2)
     frameDot = Frame(frame1)
     frameDot.pack_forget()
-    btnArrow1 = Button(frameDot, image=images[20], command=lambda: dotClick(''), font="10")
+    btnArrow1 = Button(frameDot, image=images[20], command=lambda d='', winVar=winVar: dotClick(d, winVar), font="10")
     btnArrow1.pack(side=LEFT, padx=2, pady=2)
-    btnArrow2 = Button(frameDot, image=images[21], command=lambda: dotClick((5, 5)), font="10")
+    btnArrow2 = Button(frameDot, image=images[21], command=lambda d=(5, 5), winVar=winVar: dotClick(d, winVar),
+                       font="10")
     btnArrow2.pack(side=LEFT, padx=2, pady=2)
-    btnArrow3 = Button(frameDot, image=images[22], command=lambda: dotClick((20, 20)), font="10")
+    btnArrow3 = Button(frameDot, image=images[22], command=lambda d=(10, 2), winVar=winVar: dotClick(d, winVar),
+                       font="10")
     btnArrow3.pack(side=LEFT, padx=2, pady=2)
     frameOptions = Frame(frame1)
     frameOptions.pack_forget()
     chbGrid = Checkbutton(frameOptions, text='grid')
     chbGrid.pack(side=LEFT, padx=2, pady=2)
 
-    makeSelFig(10000, 10000, 10001, 10001, None)
+    makeSelFig(winVar, 10000, 10000, 10001, 10001, None)
 
-    w = root.winfo_width()
-    h = root.winfo_height()
-    window_width, window_height = w, h
+
 
     root.bind("<Key>", f_quit)
-    canvas.bind("<Button-1>", mouseDown)
-    canvas.bind("<B1-Motion>", mouseMove)
-    canvas.bind("<Motion>", mouseMoveNoButton)
-    canvas.bind("<ButtonRelease-1>", mouseUp)
-    root.bind('<Configure>', lambda e: on_move_or_resize())
+    winVar['canvas'].bind("<Button-1>", lambda event, winVar=winVar: mouseDown(event, winVar))
+    winVar['canvas'].bind("<B1-Motion>", lambda event, winVar=winVar: mouseMove(event, winVar))
+    winVar['canvas'].bind("<Motion>", lambda event, winVar=winVar: mouseMoveNoButton(event, winVar))
+    # lambda event, b="white": change_bg(event, b)
+    winVar['canvas'].bind("<ButtonRelease-1>", lambda event, winVar=winVar: mouseUp(event, winVar))
+    root.bind('<Configure>', lambda event, root=root, winVar=winVar: on_move_or_resize(event, root, winVar))
 
-    color = "blue"
+    winVar['color'] = "blue"
     # TODO check directories tmp and lessons. If no - create them
 
     print(root.wm_geometry())
