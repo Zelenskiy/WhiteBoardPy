@@ -78,8 +78,6 @@ def btnScrInsertInCanvasClick(root, floatWindow, winVar):
     winVar['figures'].append(k)
     print(winVar['images'])
 
-
-
     floatWindow.destroy()
 
 
@@ -98,7 +96,6 @@ def btnScrClick(root, winVar):
 
 
 def save(winVar):
-    # global figures, penColor, brushColor, penWidth, fonColor, canvas_width, canvas_height, xc, yc
     data = {}
     data['figures'] = winVar['figures']
     data['penColor'] = winVar['penColor']
@@ -115,12 +112,11 @@ def save(winVar):
 
 
 def load(root, winVar):
-    # global figures, penColor, brushColor, penWidth, fonColor, canvas_width, canvas_height, xc, yc, \
-    #     grList, selFig, tool
     winVar['canvas'].delete(ALL)
     winVar['figures'] = []
-    winVar['tool'] = 1
-
+    winVar['images'] = []
+    # winVar['tool'] = 1
+    btnPenClick()
     with open("test.wb", "rb") as fp:  # Unpickling
         data = pickle.load(fp)
     winVar['figures'] = data['figures']
@@ -150,15 +146,15 @@ def load(root, winVar):
         elif fig[1] == 'rectangle':
             fig[0] = winVar['canvas'].create_polygon(f['x1'], f['y1'], f['x2'], f['y2'], f['x3'], f['y3'], f['x4'],
                                                      f['y4'],
-                                                     width=f['width'], height=f['height'], fill=f['fill'],
+                                                     width=f['width'], fill=f['fill'],
                                                      outline=f['outline'])
         elif fig[1] == 'image':
             width = f['width']
             height = f['height']
             image = Image.open(f['name'])
             image = image.resize((width, height), Image.ANTIALIAS)
-            root.output = ImageTk.PhotoImage(image)
-            fig[0] = winVar['canvas'].create_image(f['x'], f['y'], image=root.output, state=NORMAL, anchor=NW)
+            winVar['images'].append(ImageTk.PhotoImage(image))
+            fig[0] = winVar['canvas'].create_image(f['x'], f['y'], image=winVar['images'][-1], state=NORMAL, anchor=NW)
 
 
 def f_quit(event):
@@ -248,15 +244,15 @@ def mouseMove(event, winVar):
                                                            winVar['yLineStart'], width=winVar['penWidth'],
                                                            fill=winVar['penColor'], arrow=winVar['lineArrow'],
                                                            dash=winVar['lineDot'])
-            cLine0 = {}
-            cLine0['x1'] = winVar['xLineStart']
-            cLine0['y1'] = winVar['yLineStart']
-            cLine0['x2'] = winVar['xLineStart']
-            cLine0['y2'] = winVar['yLineStart']
-            cLine0['width'] = winVar['penWidth']
-            cLine0['fill'] = winVar['penColor']
-            cLine0['arrow'] = winVar['lineArrow']
-            cLine0['dash'] = winVar['lineDot']
+            winVar['cLine0'] = {}
+            winVar['cLine0']['x1'] = winVar['xLineStart']
+            winVar['cLine0']['y1'] = winVar['yLineStart']
+            winVar['cLine0']['x2'] = winVar['xLineStart']
+            winVar['cLine0']['y2'] = winVar['yLineStart']
+            winVar['cLine0']['width'] = winVar['penWidth']
+            winVar['cLine0']['fill'] = winVar['penColor']
+            winVar['cLine0']['arrow'] = winVar['lineArrow']
+            winVar['cLine0']['dash'] = winVar['lineDot']
 
         else:
             winVar['canvas'].coords(winVar['line0'], winVar['xLineStart'], winVar['yLineStart'], event.x, event.y)
@@ -266,7 +262,7 @@ def mouseMove(event, winVar):
             winVar['cLine0']['y2'] = event.y
 
     elif winVar['tool'] == 4:
-        #rectangle
+        # rectangle
         if winVar['xStart'] == 0 and winVar['yStart'] == 0:
             winVar['xLineStart'] = event.x
             winVar['yLineStart'] = event.y
@@ -347,6 +343,7 @@ def mouseMove(event, winVar):
         else:
             x1, y1, x2, y2 = coords(winVar['canvas'], winVar['selFig']['Obj'][0])
             if (event.x > x1) and (event.x < x2) and (event.y > y1) and (event.y < y2):
+                # draging
                 if winVar['selFig']['Obj'][1] == 'rectangle':
                     x1 = winVar['selFig']['Obj'][2]['x1']
                     y1 = winVar['selFig']['Obj'][2]['y1']
@@ -390,7 +387,7 @@ def mouseMove(event, winVar):
                     winVar['selFig']['Obj'][2]['x'] = x + dx
                     winVar['selFig']['Obj'][2]['y'] = y + dy
                     winVar['selFig']['Obj'][2]['width'] = w
-                    winVar['selFig']['Obj'][2]['height'] = w
+                    winVar['selFig']['Obj'][2]['height'] = h
                     winVar['canvas'].coords(winVar['selFig']['Obj'][0], x + dx, y + dy)
                     winVar['canvas'].coords(winVar['selFig']['0'], coords(winVar['canvas'], winVar['selFig']['Obj'][0]))
                     x1, y1, x2, y2 = coords(winVar['canvas'], winVar['selFig']['Obj'][0])
@@ -497,6 +494,15 @@ def noSelectAll(frame1):
     for associated_widget in frame1.winfo_children():
         associated_widget.configure(bg='white')
 
+#
+# def btnPenClick(root, winVar):
+#     winVar['tool'] = 1
+#
+#     noSelectAll(root.winfo_children()[1])
+#     print(root.winfo_children())
+#     btnPen.config(bg=winVar['btnActiveColor'])
+#     deleteSelectionLinks()
+
 
 def main():
     winVar = {}
@@ -517,7 +523,6 @@ def main():
     winVar['canvas'] = Canvas(frame, bg=winVar['fonColor'])
     winVar['window_height'] = root.winfo_height()
     winVar['window_width'] = root.winfo_width()
-
 
     winVar['xc'] = 0
     winVar['yc'] = 0
@@ -630,7 +635,7 @@ def main():
         deleteObject(winVar['canvas'], winVar['selFig']['0'])
         deleteObject(winVar['canvas'], winVar['selFig']['D'])
 
-    def btnPenClick():
+    def btnPenClick(root, winVar):
         winVar['tool'] = 1
         noSelectAll(frame1)
         btnPen.config(bg=winVar['btnActiveColor'])
@@ -686,7 +691,8 @@ def main():
     # Buttons for main panel
     btnAr = Button(frame1, image=images[28], command=btnArClick, font="10")
     btnAr.pack(side=LEFT, padx=2, pady=2)
-    btnPen = Button(frame1, image=images[0], command=btnPenClick, font="10")
+    btnPen = Button(frame1, image=images[0], command=lambda root=root, winVar=winVar: btnPenClick(root, winVar),
+                    font="10")
     btnPen.pack(side=LEFT, padx=2, pady=2)
     btnEr = Button(frame1, image=images[1], command=btnErClick, font="10")
     btnEr.pack(side=LEFT, padx=2, pady=2)
@@ -762,8 +768,6 @@ def main():
     chbGrid.pack(side=LEFT, padx=2, pady=2)
 
     makeSelFig(winVar, 10000, 10000, 10001, 10001, None)
-
-
 
     root.bind("<Key>", f_quit)
     winVar['canvas'].bind("<Button-1>", lambda event, winVar=winVar: mouseDown(event, winVar))
