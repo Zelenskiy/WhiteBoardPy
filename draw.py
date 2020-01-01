@@ -9,21 +9,13 @@ def coords(canvas, obj):
 def moveObjectBy(canvas, obj, dx, dy):
   canvas.move(obj, dx, dy)
 
-def transformCoord(x, y):
-    global _viewPort
-    if _viewPort:
-        x1, x2, y1, y2 = _viewPort
-        w, h = windowSize()
-        x = (x - x1) * w / (x2 - x1)
-        y = (y2 - y) * h / (y2 - y1)
-    return x, y
 
 
-def grid(winVar):
-    for y in range(0, winVar['canvas_width']*100, winVar['step']):
-        winVar['grList'].append(winVar['canvas'].create_line(0, y, winVar['canvas_width']*100, y, fill=winVar['gridColor'], dash=(2,8)))
-    for x in range(0, winVar['canvas_height']*100, winVar['step']):
-        winVar['grList'].append(winVar['canvas'].create_line(x, 0, x, winVar['canvas_height']*100, fill=winVar['gridColor'], dash=(2,8)))
+def grid(self):
+    for y in range(0, self.canvas_width*100, self.step):
+        self.grList.append(self.canvas.create_line(0, y, self.canvas_width*100, y, fill=self.gridColor, dash=(2,8)))
+    for x in range(0, self.canvas_height*100, self.step):
+        self.grList.append(self.canvas.create_line(x, 0, x, self.canvas_height*100, fill=self.gridColor, dash=(2,8)))
 
 
 def center(canvas, obj):
@@ -34,39 +26,37 @@ def center(canvas, obj):
 def deleteObject(canvas, obj):
     canvas.delete(obj)
 
-
-# def erMove(errSize, canvas, figures, x, y):
-def erMove(winVar, x, y):
-    for fig in winVar['figures']:
+def erMove(self, x, y):
+    for fig in self.figures:
         # print(fig[0])
 
-        xCeOb, yCeOb = center(winVar['canvas'], fig[0])
-        if abs(x + winVar['errSize'] - xCeOb) < winVar['errSize'] and abs(y + winVar['errSize'] - yCeOb) < winVar['errSize']:
-            if len(winVar['figures']) > 0:
-                deleteObject(winVar['canvas'], fig[0])
-                winVar['figures'].remove(fig)
+        xCeOb, yCeOb = center(self.canvas, fig[0])
+        if abs(x + self.errSize - xCeOb) < self.errSize and abs(y + self.errSize - yCeOb) < self.errSize:
+            if len(self.figures) > 0:
+                deleteObject(self.canvas, fig[0])
+                self.figures.remove(fig)
 
 
 # def penMove(color, xStart, yStart, r, canvas, figures, x, y):
-def penMove(winVar,  x, y):
-    r = winVar['penWidth']
-    x1 = winVar['xStart']
-    y1 = winVar['yStart']
+def penMove(self,  x, y):
+    r = self.penWidth
+    x1 = self.xStart
+    y1 = self.yStart
     x2 = x
     y2 = y
     step = 1
     if abs(x2 - x1) > abs(y2 - y1):
         fl = 0
-        if winVar['xStart'] < x:
-            myRange = range(winVar['xStart'], x, step)
+        if self.xStart < x:
+            myRange = range(self.xStart, x, step)
         else:
-            myRange = range(x, winVar['xStart'], step)
+            myRange = range(x, self.xStart, step)
     else:
         fl = 1
-        if winVar['yStart'] < y:
-            myRange = range(winVar['yStart'], y, step)
+        if self.yStart < y:
+            myRange = range(self.yStart, y, step)
         else:
-            myRange = range(y, winVar['yStart'], step)
+            myRange = range(y, self.yStart, step)
     for x in myRange:
         if fl == 0:
             xx = x
@@ -76,17 +66,17 @@ def penMove(winVar,  x, y):
             xx = int(((x1 * y2 - x2 * y1) + (x2 - x1) * yy) / (y2 - y1))
         if True:
             k = []
-            k.append(winVar['canvas'].create_oval(xx - r // 2, yy - r // 2, xx + r // 2, yy + r // 2, outline=winVar['penColor'],
-                                        fill=winVar['penColor'], width=1))
+            k.append(self.canvas.create_oval(xx - r // 2, yy - r // 2, xx + r // 2, yy + r // 2, outline=self.penColor,
+                                        fill=self.penColor, width=1))
             k.append("oval")
             c = {}
             c['x1'] = xx - r // 2
             c['y1'] = yy - r // 2
             c['x2'] = xx + r // 2
             c['y2'] = yy + r // 2
-            c['outline'] = winVar['color']
-            c['fill'] = winVar['color']
+            c['outline'] = self.color
+            c['fill'] = self.color
             c['width'] = 1
             k.append(c)
-            winVar['figures'].append(k)
+            self.figures.append(k)
 
