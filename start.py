@@ -72,6 +72,8 @@ class App:
         self.frame = Frame(root, relief=RAISED, borderwidth=1)
         self.frame.pack(fill=BOTH, expand=True)
 
+        self.f0 = []
+        self.poly = []
         self.flag = 0
         self.fonColor = "#E9FBCA"
         self.brushColor = ""
@@ -88,9 +90,9 @@ class App:
         self.canvas.config(width=self.canvas_width, height=self.canvas_height)
         self.canvas.place(x=self.xc, y=self.yc)
         self.canvases = []
-        self.cLine0 = {'x1': 0, 'y1': 0, 'x2': 0, 'y2': 0}
+        self.Line0 = {'x1': 0, 'y1': 0, 'x2': 0, 'y2': 0}
 
-        self.cpFigures = []
+        self.Figures = []
         self.errSize = 10
         self.figures = []
 
@@ -372,11 +374,14 @@ class App:
             quit()
 
 
-    def resize_object(self, obj, event):
+
 
 
     def mouseDown(self, event):
-        if self.tool == 8:
+        if self.tool == 1:
+            self.poly = []
+            self.f0.append(None)
+        elif self.tool == 8:
             # select object
 
             for fig in self.figures:
@@ -400,6 +405,8 @@ class App:
         fl = False
         if self.tool == 8:
 
+
+
             # change cursor
             print(self.selFig)
             if self.selFig['0'] != None:
@@ -414,6 +421,144 @@ class App:
         if not fl:
             pass
             # selFig = {}
+
+    def resize_object(self, event):
+        f = False
+        if self.selFig['0'] != None and self.selFig['Obj']!= None :
+            x1, y1, x2, y2 = coords(self.canvas, self.selFig['0'])
+            # x1, y1, x2, y2 = self.canvas.coords(self.selFig['Obj'][0])
+            if self.selFig['Obj'][1] == 'line':
+                x1, y1, x2, y2 = self.canvas.coords(self.selFig['Obj'][0])
+                if math.sqrt((event.x - x1) ** 2 + (event.y - y1) ** 2) < 50:  # 1 vertic
+                    self.flag = 2
+                    self.canvas.config(cursor='bottom_right_corner')
+                    self.canvas.coords(self.selFig['Obj'][0], event.x, event.y, x2, y2)
+                    self.selFig['Obj'][2]['x1'] = event.x
+                    self.selFig['Obj'][2]['y1'] = event.y
+                    self.selFig['Obj'][2]['x2'] = x2
+                    self.selFig['Obj'][2]['y2'] = y2
+                    self.canvas.coords(self.selFig['0'], event.x-1, event.y-1, x2+1, y2+1)
+                    x1, y1, x2, y2 = self.canvas.coords(self.selFig['Obj'][0])
+                    self.canvas.coords(self.selFig['D'], x2 - 10, abs(y1 + y2) // 2 - 10, x2 + 10,
+                                       abs(y1 + y2) // 2 + 10)
+
+                    f = True
+                elif math.sqrt((event.x - x2) ** 2 + (event.y - y2) ** 2) < 50:  # 2 vertic
+                    self.flag = 2
+                    self.canvas.config(cursor='bottom_right_corner')
+                    self.canvas.coords(self.selFig['Obj'][0], x1, y1, event.x, event.y)
+                    self.selFig['Obj'][2]['x1'] = x1
+                    self.selFig['Obj'][2]['y1'] = y1
+                    self.selFig['Obj'][2]['x2'] = event.x
+                    self.selFig['Obj'][2]['y2'] = event.y
+                    self.canvas.coords(self.selFig['0'],  x1-1, y1-1, event.x+1, event.y+1)
+                    x1, y1, x2, y2 = self.canvas.coords(self.selFig['Obj'][0])
+                    self.canvas.coords(self.selFig['D'], x2 - 10, abs(y1 + y2) // 2 - 10, x2 + 10,
+                                       abs(y1 + y2) // 2 + 10)
+                    f = True
+            elif self.selFig['Obj'][1] == 'rectangle':
+                xo1, yo1, xo2, yo2 = coords(self.canvas, self.selFig['0'])
+                if math.sqrt((event.x - xo2) ** 2 + (event.y - yo2) ** 2) < 50:
+                    self.flag = 2
+                    x1 = self.selFig['Obj'][2]['x1']
+                    y1 = self.selFig['Obj'][2]['y1']
+                    self.canvas.coords(self.selFig['Obj'][0],
+                                       x1, y1, event.x, y1,
+                                       event.x, event.y, x1, event.y)
+                    self.canvas.coords(self.selFig['0'], x1 - 1, y1 - 1, event.x + 1, event.y + 1)
+                    self.canvas.coords(self.selFig['D'], event.x - 10, (y1 + event.y) // 2 - 10,
+                                       event.x + 10, (y1 + event.y) // 2 + 10)
+                    self.selFig['Obj'][2]['x2'] = event.x
+                    self.selFig['Obj'][2]['y2'] = y1
+                    self.selFig['Obj'][2]['x3'] = event.x
+                    self.selFig['Obj'][2]['y3'] = event.y
+                    self.selFig['Obj'][2]['x4'] = x1
+                    self.selFig['Obj'][2]['y4'] = event.y
+                    f = True
+            elif self.selFig['Obj'][1] == 'image':
+                xo1, yo1, xo2, yo2 = coords(self.canvas, self.selFig['0'])
+                if math.sqrt((event.x - xo2) ** 2 + (event.y - yo2) ** 2) < 50:
+                    self.flag = 2
+                    x = self.selFig['Obj'][2]['x']
+                    y = self.selFig['Obj'][2]['y']
+                    self.canvas.coords(self.selFig['0'], x - 1, y - 1, event.x + 1, event.y + 1)
+                    self.canvas.coords(self.selFig['D'], event.x - 10, (y + event.y) // 2 - 10,
+                                       event.x + 10,
+                                       (y + event.y) // 2 + 10)
+                    f = True
+        return f
+
+
+    def move_object(self, event):
+        f = False
+        if self.selFig['0'] != None:
+            self.flag = 1
+            if self.selFig['Obj'][1] == 'rectangle':
+                x1 = self.selFig['Obj'][2]['x1']
+                y1 = self.selFig['Obj'][2]['y1']
+                x2 = self.selFig['Obj'][2]['x2']
+                y2 = self.selFig['Obj'][2]['y2']
+                x3 = self.selFig['Obj'][2]['x3']
+                y3 = self.selFig['Obj'][2]['y3']
+                x4 = self.selFig['Obj'][2]['x4']
+                y4 = self.selFig['Obj'][2]['y4']
+                dx = event.x - self.xStart
+                dy = event.y - self.yStart
+                self.selFig['Obj'][2]['x1'] = x1 + dx
+                self.selFig['Obj'][2]['y1'] = y1 + dy
+                self.selFig['Obj'][2]['x2'] = x2 + dx
+                self.selFig['Obj'][2]['y2'] = y2 + dy
+                self.selFig['Obj'][2]['x3'] = x3 + dx
+                self.selFig['Obj'][2]['y3'] = y3 + dy
+                self.selFig['Obj'][2]['x4'] = x4 + dx
+                self.selFig['Obj'][2]['y4'] = y4 + dy
+                moveObjectBy(self.canvas, self.selFig['Obj'][0], dx, dy)
+                self.canvas.coords(self.selFig['0'],
+                                   coords(self.canvas, self.selFig['Obj'][0]))
+                x1, y1, x2, y2 = coords(self.canvas, self.selFig['Obj'][0])
+                self.canvas.coords(self.selFig['D'], x2 - 10, abs(y1 + y2) // 2 - 10, x2 + 10,
+                                   abs(y1 + y2) // 2 + 10)
+
+                f = True
+            elif self.selFig['Obj'][1] == 'line':
+                x1 = self.selFig['Obj'][2]['x1']
+                y1 = self.selFig['Obj'][2]['y1']
+                x3 = self.selFig['Obj'][2]['x2']
+                y3 = self.selFig['Obj'][2]['y2']
+                dx = event.x - self.xStart
+                dy = event.y - self.yStart
+                self.selFig['Obj'][2]['x1'] = x1 + dx
+                self.selFig['Obj'][2]['y1'] = y1 + dy
+                self.selFig['Obj'][2]['x2'] = x3 + dx
+                self.selFig['Obj'][2]['y2'] = y3 + dy
+                moveObjectBy(self.canvas, self.selFig['Obj'][0], dx, dy)
+                self.canvas.coords(self.selFig['0'],
+                                   coords(self.canvas, self.selFig['Obj'][0]))
+                x1, y1, x2, y2 = coords(self.canvas, self.selFig['Obj'][0])
+                self.canvas.coords(self.selFig['D'], x2 - 10, abs(y1 + y2) // 2 - 10, x2 + 10,
+                                   abs(y1 + y2) // 2 + 10)
+
+                f = True
+            elif self.selFig['Obj'][1] == 'image':
+                self.flag = 3
+                x = self.selFig['Obj'][2]['x']
+                y = self.selFig['Obj'][2]['y']
+                w = self.selFig['Obj'][2]['width']
+                h = self.selFig['Obj'][2]['height']
+                dx = event.x - self.xStart
+                dy = event.y - self.yStart
+                self.selFig['Obj'][2]['x'] = x + dx
+                self.selFig['Obj'][2]['y'] = y + dy
+                self.selFig['Obj'][2]['width'] = w
+                self.selFig['Obj'][2]['height'] = h
+                self.canvas.coords(self.selFig['Obj'][0], x + dx, y + dy)
+                self.canvas.coords(self.selFig['0'],
+                                   coords(self.canvas, self.selFig['Obj'][0]))
+                x1, y1, x2, y2 = coords(self.canvas, self.selFig['Obj'][0])
+                self.canvas.coords(self.selFig['D'], x2 - 10, abs(y1 + y2) // 2 - 10, x2 + 10,
+                                   abs(y1 + y2) // 2 + 10)
+                f = True
+        return f
 
     def mouseMove(self, event):
         xx = ""
@@ -545,139 +690,22 @@ class App:
                 # self.canvas.coords(self.line0, x1, y1, x2, y2, x3, y3, x4, y4)
 
         elif self.tool == 8:
-            f = True
-            print(self.selFig['Obj'])
-            if not self.selFig['Obj'] is None:
-                print(self.selFig['Obj'][0])
-                if self.selFig['Obj'][1] == 'line':
-                    x1, y1, x2, y2 = self.canvas.coords(self.selFig['Obj'][0])
-                    if (math.sqrt((event.x - x1) ** 2 + (event.y - y1) ** 2) < 50) or (
-                            math.sqrt((event.x - x2) ** 2 + (event.y - y2) ** 2) < 50) or (self.flag == 4):
-                        # resize line
-                        print("resize line")
-                        self.flag = 4
-                        # x1 = self.selFig['Obj'][2]['x1']
-                        # y1 = self.selFig['Obj'][2]['y1']
-                        # x2 = self.selFig['Obj'][2]['x2']
-                        # y2 = self.selFig['Obj'][2]['y2']
-                        # x1,y1,x2,y2 = self.canvas.coords(self.selFig['Obj'][0])
-                        # check which vertic moving
-                        if math.sqrt((event.x - x1) ** 2 + (event.y - y1) ** 2) < 50:  # 1 vertic
-                            self.canvas.config(cursor='bottom_right_corner')
-                            self.canvas.coords(self.selFig['Obj'][0], event.x, event.y, x2, y2)
-                            self.selFig['Obj'][2]['x1'] = event.x
-                            self.selFig['Obj'][2]['y1'] = event.y
-                            self.selFig['Obj'][2]['x2'] = x2
-                            self.selFig['Obj'][2]['y2'] = y2
-
-
-                        elif math.sqrt((event.x - x2) ** 2 + (event.y - y2) ** 2) < 50:  # 2 vertic
-                            self.canvas.config(cursor='bottom_right_corner')
-                            self.canvas.coords(self.selFig['Obj'][0], x1, y1, event.x, event.y)
-                            self.selFig['Obj'][2]['x1'] = x1
-                            self.selFig['Obj'][2]['y1'] = y1
-                            self.selFig['Obj'][2]['x2'] = event.x
-                            self.selFig['Obj'][2]['y2'] = event.y
-
-
-                elif self.selFig['Obj'][1] == 'rectangle':
-                    xo1, yo1, xo2, yo2 = coords(self.canvas, self.selFig['0'])
-                    if math.sqrt((event.x - xo2) ** 2 + (event.y - yo2) ** 2) < 50:
-                        # resize rectangle
-                        self.canvas.config(cursor='bottom_right_corner')
-                        if self.selFig['Obj'][1] == 'rectangle':
-                            print("resize rectangle")
-                            x1 = self.selFig['Obj'][2]['x1']
-                            y1 = self.selFig['Obj'][2]['y1']
-
-                            print(11111111)
-                            self.canvas.coords(self.selFig['Obj'][0],
-                                               x1, y1, event.x, y1,
-                                               event.x, event.y, x1, event.y)
-                            self.canvas.coords(self.selFig['0'], x1 - 1, y1 - 1, event.x + 1, event.y + 1)
-                            self.canvas.coords(self.selFig['D'], event.x - 10, (y1 + event.y) // 2 - 10,
-                                               event.x + 10, (y1 + event.y) // 2 + 10)
-                            self.selFig['Obj'][2]['x2'] = event.x
-                            self.selFig['Obj'][2]['y2'] = y1
-                            self.selFig['Obj'][2]['x3'] = event.x
-                            self.selFig['Obj'][2]['y3'] = event.y
-                            self.selFig['Obj'][2]['x4'] = x1
-                            self.selFig['Obj'][2]['y4'] = event.y
-                elif self.selFig['Obj'][1] == 'image':
-                    xo1, yo1, xo2, yo2 = coords(self.canvas, self.selFig['0'])
-                    if math.sqrt((event.x - xo2) ** 2 + (event.y - yo2) ** 2) < 50:
-                        self.flag = 1
-
-                        x = self.selFig['Obj'][2]['x']
-                        y = self.selFig['Obj'][2]['y']
-
-                        self.canvas.coords(self.selFig['0'], x - 1, y - 1, event.x + 1, event.y + 1)
-                        self.canvas.coords(self.selFig['D'], event.x - 10, (y + event.y) // 2 - 10,
-                                           event.x + 10,
-                                           (y + event.y) // 2 + 10)
-                    xx = "resize"
-        if self.flag == 0:
-            x1, y1, x2, y2 = coords(self.canvas, self.selFig['Obj'][0])
-            if (event.x > x1) and (event.x < x2) and (event.y > y1) and (event.y < y2):
-                # draging
-                self.flag = 0
-                if self.selFig['Obj'][1] == 'rectangle':
-                    x1 = self.selFig['Obj'][2]['x1']
-                    y1 = self.selFig['Obj'][2]['y1']
-                    x2 = self.selFig['Obj'][2]['x2']
-                    y2 = self.selFig['Obj'][2]['y2']
-                    x3 = self.selFig['Obj'][2]['x3']
-                    y3 = self.selFig['Obj'][2]['y3']
-                    x4 = self.selFig['Obj'][2]['x4']
-                    y4 = self.selFig['Obj'][2]['y4']
-                    dx = event.x - self.xStart
-                    dy = event.y - self.yStart
-                    self.selFig['Obj'][2]['x1'] = x1 + dx
-                    self.selFig['Obj'][2]['y1'] = y1 + dy
-                    self.selFig['Obj'][2]['x2'] = x2 + dx
-                    self.selFig['Obj'][2]['y2'] = y2 + dy
-                    self.selFig['Obj'][2]['x3'] = x3 + dx
-                    self.selFig['Obj'][2]['y3'] = y3 + dy
-                    self.selFig['Obj'][2]['x4'] = x4 + dx
-                    self.selFig['Obj'][2]['y4'] = y4 + dy
-                elif self.selFig['Obj'][1] == 'line':
-                    x1 = self.selFig['Obj'][2]['x1']
-                    y1 = self.selFig['Obj'][2]['y1']
-                    x3 = self.selFig['Obj'][2]['x2']
-                    y3 = self.selFig['Obj'][2]['y2']
-                    dx = event.x - self.xStart
-                    dy = event.y - self.yStart
-                    self.selFig['Obj'][2]['x1'] = x1 + dx
-                    self.selFig['Obj'][2]['y1'] = y1 + dy
-                    self.selFig['Obj'][2]['x2'] = x3 + dx
-                    self.selFig['Obj'][2]['y2'] = y3 + dy
-                elif self.selFig['Obj'][1] == 'image':
-                    x = self.selFig['Obj'][2]['x']
-                    y = self.selFig['Obj'][2]['y']
-                    w = self.selFig['Obj'][2]['width']
-                    h = self.selFig['Obj'][2]['height']
-                    dx = event.x - self.xStart
-                    dy = event.y - self.yStart
-                    self.selFig['Obj'][2]['x'] = x + dx
-                    self.selFig['Obj'][2]['y'] = y + dy
-                    self.selFig['Obj'][2]['width'] = w
-                    self.selFig['Obj'][2]['height'] = h
-                    self.canvas.coords(self.selFig['Obj'][0], x + dx, y + dy)
-                    self.canvas.coords(self.selFig['0'],
-                                       coords(self.canvas, self.selFig['Obj'][0]))
+            f = False
+            if self.flag ==0 or self.flag == 2:
+                f = self.resize_object(event)
+            if not f and (self.flag ==0 or self.flag ==1 or self.flag ==3):
+                try:
                     x1, y1, x2, y2 = coords(self.canvas, self.selFig['Obj'][0])
-                    self.canvas.coords(self.selFig['D'], x2 - 10, abs(y1 + y2) // 2 - 10, x2 + 10,
-                                       abs(y1 + y2) // 2 + 10)
+                    if (event.x > x1) and (event.x < x2) and (event.y > y1) and (event.y < y2):
+                        # draging
+                        f = self.move_object(event)
+                except:
+                    pass
 
-                if xx != "resize" and self.selFig['Obj'][1] != 'image':
-                    moveObjectBy(self.canvas, self.selFig['Obj'][0], dx, dy)
-                    self.canvas.coords(self.selFig['0'],
-                                       coords(self.canvas, self.selFig['Obj'][0]))
-                    x1, y1, x2, y2 = coords(self.canvas, self.selFig['Obj'][0])
-                    self.canvas.coords(self.selFig['D'], x2 - 10, abs(y1 + y2) // 2 - 10, x2 + 10,
-                                       abs(y1 + y2) // 2 + 10)
 
-        if self.tool != 8:
+
+
+        if self.tool != 8:  # Hide markers
             if self.selFig != {}:
                 self.canvas.coords(self.selFig, 100000, 100000, 1000001, 100001)
             # selFig = {}
@@ -712,7 +740,21 @@ class App:
         self.yStart = 0
 
         fl = False
-        if self.tool == 3 or self.tool == 4:
+        if self.tool == 1:
+            k = []
+
+            k.append(self.f0[-1])
+            k.append("polyline")
+
+            k.append(self.poly)
+            c={}
+            c['fill'] = self.penColor
+            c['width'] = self.penWidth
+            c['outline'] = self.penColor
+            k.append(c)
+            self.figures.append(k)
+            print(self.figures)
+        elif self.tool == 3 or self.tool == 4:
             k = []
             k.append(self.line0)
             if self.tool == 3:
@@ -731,7 +773,7 @@ class App:
                 self.canvas.coords(self.selFig['D'], 10000, 10000, 10001, 10001)
                 self.figures.remove(self.selFig['Obj'])
 
-        if self.tool == 8 and self.flag == 1 and self.selFig['Obj'][1] == 'image':
+        if self.tool == 8 and self.flag == 2 and self.selFig['Obj'][1] == 'image':
             print("resizing")
             x, y, xo2, yo2 = coords(self.canvas, self.selFig['0'])
             width = xo2 - x

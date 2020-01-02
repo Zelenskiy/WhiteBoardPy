@@ -1,4 +1,32 @@
+from pyautogui import Point
+
 _viewPort = None
+
+
+class Polyline:
+    def __init__(self, **kwargs):
+        self.points = []
+        # kwargs["color"] = kwargs.get("color", "black")
+        self.color = kwargs.get("color", "black")
+        self.width = kwargs.get("width", 1)
+
+    def add_point(self, x, y):
+        p = Point(x, y)
+        self.points.append(p)
+
+    def remove(self):
+        self.points = []
+
+    def draw(self, canvas):
+        if self.points != []:
+            line = []
+            x0 = self.points[0].x
+            y0 = self.points[0].y
+            for point in self.points:
+                line.append(canvas.create_line(x0, y0, point.x, point.y, fill=self.color, width=4))
+                x0 = point.x
+                y0 = point.y
+        return line
 
 
 def coords(canvas, obj):
@@ -7,15 +35,14 @@ def coords(canvas, obj):
 
 
 def moveObjectBy(canvas, obj, dx, dy):
-  canvas.move(obj, dx, dy)
-
+    canvas.move(obj, dx, dy)
 
 
 def grid(self):
-    for y in range(0, self.canvas_width*100, self.step):
-        self.grList.append(self.canvas.create_line(0, y, self.canvas_width*100, y, fill=self.gridColor, dash=(2,8)))
-    for x in range(0, self.canvas_height*100, self.step):
-        self.grList.append(self.canvas.create_line(x, 0, x, self.canvas_height*100, fill=self.gridColor, dash=(2,8)))
+    for y in range(0, self.canvas_width * 100, self.step):
+        self.grList.append(self.canvas.create_line(0, y, self.canvas_width * 100, y, fill=self.gridColor, dash=(2, 8)))
+    for x in range(0, self.canvas_height * 100, self.step):
+        self.grList.append(self.canvas.create_line(x, 0, x, self.canvas_height * 100, fill=self.gridColor, dash=(2, 8)))
 
 
 def center(canvas, obj):
@@ -25,6 +52,7 @@ def center(canvas, obj):
 
 def deleteObject(canvas, obj):
     canvas.delete(obj)
+
 
 def erMove(self, x, y):
     for fig in self.figures:
@@ -38,7 +66,7 @@ def erMove(self, x, y):
 
 
 # def penMove(color, xStart, yStart, r, canvas, figures, x, y):
-def penMove(self,  x, y):
+def _penMove(self, x, y):
     r = self.penWidth
     x1 = self.xStart
     y1 = self.yStart
@@ -67,7 +95,7 @@ def penMove(self,  x, y):
         if True:
             k = []
             k.append(self.canvas.create_oval(xx - r // 2, yy - r // 2, xx + r // 2, yy + r // 2, outline=self.penColor,
-                                        fill=self.penColor, width=1))
+                                             fill=self.penColor, width=1))
             k.append("oval")
             c = {}
             c['x1'] = xx - r // 2
@@ -80,3 +108,22 @@ def penMove(self,  x, y):
             k.append(c)
             self.figures.append(k)
 
+
+def penMove(self, x, y):
+    if self.xStart == 0 and self.yStart == 0:
+        # self.f0 = self.canvas.create_polygon(Point(x, y), fill=self.penColor, width=self.penWidth,
+        #                                      outline=self.penColor)
+        pass
+    else:
+        # [[4471, 'line', {'x1': 166, 'y1': 269, 'x2': 242, 'y2': 334, 'width': 2, 'fill': '#0000FF', 'arrow': '', 'dash': ''}],
+        #  [4472, 'rectangle', {'x1': 174, 'y1': 361, 'x2': 273, 'y2': 361, 'x3': 273, 'y3': 433, 'x4': 174, 'y4': 433, 'width': 2,       'outline': '#0000FF', 'fill': ''}], {}]
+
+        self.poly.append(Point(x, y))
+        p1 = self.poly.copy()
+        p2 = self.poly.copy()
+        p2.reverse()
+        p3 = p1 + p2
+
+        deleteObject(self.canvas, self.f0[-1])
+        self.f0[-1] = self.canvas.create_polygon(p3, fill=self.penColor, width=self.penWidth,
+                                             outline=self.penColor)
