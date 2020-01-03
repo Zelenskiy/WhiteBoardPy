@@ -409,44 +409,32 @@ class App:
         if self.tool == 1:
             self.poly = []
             self.f0.append(None)
-        elif self.tool == 8:
-            # select object
-
+        elif self.tool == 8:            # select object
             for fig in self.figures:
                 print(self.figures)
                 print(fig[0])
-                x1, y1, x2, y2 = coords(self.canvas, fig[0])
-                if (event.x > x1) and (event.x < x2) and (event.y > y1) and (event.y < y2):
-                    if self.selFig == {}:
-                        pass
-                    else:
-                        self.canvas.coords(self.selFig['0'], x1 - 1, y1 - 1, x2 + 1, y2 + 1)
-
-                        self.canvas.coords(self.selFig['D'], x2 - 10, abs(y1 + y2) // 2 - 10, x2 + 10,
-                                           abs(y1 + y2) // 2 + 10)
-
-                        self.selFig['Obj'] = fig
-                    fl = True
-                    break
-            self.f0.append([])
-        # repeat code
-        fl = False
-        if self.tool == 8:
-
-            # change cursor
-            print(self.selFig)
-            if self.selFig['0'] != None:
                 try:
-                    x1, y1, x2, y2 = coords(self.canvas, self.selFig['0'])
+                    x1, y1, x2, y2 = coords(self.canvas, fig[0])
                     if (event.x > x1) and (event.x < x2) and (event.y > y1) and (event.y < y2):
                         self.canvas.config(cursor="fleur")
+                        if self.selFig != {}:
+                            self.canvas.coords(self.selFig['0'], x1 - 1, y1 - 1, x2 + 1, y2 + 1)
+                            self.canvas.coords(self.selFig['D'], x2 - 10, abs(y1 + y2) // 2 - 10, x2 + 10,
+                                               abs(y1 + y2) // 2 + 10)
+                            self.selFig['Obj'] = fig
+                        fl = True
+                        break
                     else:
                         self.canvas.config(cursor="tcross")
                 except:
-                    pass
-        if not fl:
-            pass
-            # selFig = {}
+                    print("except")
+                    print("fig = ", fig)
+
+            self.f0.append([])
+        # repeat code
+        fl = False
+        # change cursor
+
 
     def resize_object(self, event):
         f = False

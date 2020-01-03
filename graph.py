@@ -362,7 +362,7 @@ def moveObjectTo(obj, x, y):
 def moveObjectBy(obj, dx, dy):
   if _viewPort:
      x1, x2, y1, y2 = _viewPort
-     w, h = windowSize()
+     w, h = windowSize()polyline
      dx = dx*w/(x2 - x1)
      dy = - dy*h/(y2 - y1)
   _C.move(obj, dx, dy)
