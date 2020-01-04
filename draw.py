@@ -110,6 +110,8 @@ def _penMove(self, x, y):
 
 
 def penMove(self, x, y):
+    if self.xStart== x and self.yStart == y:
+        return
     if self.xStart == 0 and self.yStart == 0:
          pass
     else:

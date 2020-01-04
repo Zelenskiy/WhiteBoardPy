@@ -100,11 +100,15 @@ class App:
 
         self.gridColor = "#D0D0D0"
         self.grList = []
+        self.down_x = 0
+        self.down_y = 0
 
         self.lineArrow = ""
         self.lineDot = ''
         self.penColor = "#0000FF"
+        self.penColorOld = "#0000FF"
         self.penWidth = 2
+        self.penWidthOld = 2
         self.selFig = {}
         self.step = 50
         self.tool = 1
@@ -133,7 +137,7 @@ class App:
             13: "img/line 20px.png", 14: "img/line 24px.png", 15: "img/arr.png", 16: "img/line 2px.png",
             17: "img/lineArr.png", 18: "img/bothArr.png", 19: "img/dot.png", 20: "img/line 2px.png",
             21: "img/punktir.png", 22: "img/shtrLine.png", 23: "img/options.png", 24: "img/open.png",
-            25: "img/save.png", 26: "img/shot.png", 27: "img/add.png", 28: "img/ar.png", }
+            25: "img/save.png", 26: "img/shot.png", 27: "img/add.png", 28: "img/ar.png", 29: "img/errFon.png", }
         self.images_btn = []
         self.images = []
         for i in images_path:
@@ -146,6 +150,9 @@ class App:
         self.btnPen.pack(side=LEFT, padx=2, pady=2)
         self.btnEr = Button(self.frame1, image=self.images_btn[1], command=self.btnErClick, font="10")
         self.btnEr.pack(side=LEFT, padx=2, pady=2)
+        self.btnErFon = Button(self.frame1, image=self.images_btn[29], command=self.btnErFonClick, font="10")
+        self.btnErFon.pack(side=LEFT, padx=2, pady=2)
+
         self.btnHand = Button(self.frame1, image=self.images_btn[2], command=self.btnHandClick, font="10")
         self.btnHand.pack(side=LEFT, padx=2, pady=2)
         self.btnLine = Button(self.frame1, image=self.images_btn[3], command=self.btnLineClick, font="10")
@@ -277,9 +284,10 @@ class App:
         print('Add Page')
         self.deleteSelectionLinks()
 
-
     def btnLineClick(self):
         print('Line')
+        self.penWidth = self.penWidthOld
+        self.penColor = self.penColorOld
         self.tool = 3
         self.noSelectAll()
         self.btnLine.config(bg=self.btnActiveColor)
@@ -292,9 +300,24 @@ class App:
         self.btnEr.config(bg=self.btnActiveColor)
         self.deleteSelectionLinks()
 
+    def btnErFonClick(self):
+        print("draw background color")
+        #TODO
+        self.tool = 1
+        self.penWidthOld = self.penWidth
+        self.penColorOld = self.penColor
+        self.penWidth = self.errSize
+        self.penColor = self.fonColor
+
+        self.noSelectAll()
+        self.btnErFon.config(bg=self.btnActiveColor)
+        self.deleteSelectionLinks()
+
+
     def btnRectClick(self):
         print('Rect')
-
+        self.penWidth = self.penWidthOld
+        self.penColor = self.penColorOld
         if self.tool == 4:
             if self.brushColor == self.penColor:
                 self.brushColor = ""
@@ -319,6 +342,8 @@ class App:
 
     def btnPenClick(self):
         self.tool = 1
+        self.penWidth = self.penWidthOld
+        self.penColor = self.penColorOld
         self.noSelectAll()
         self.btnPen.config(bg=self.btnActiveColor)
         self.deleteSelectionLinks()
@@ -334,6 +359,7 @@ class App:
     def btnColorSelectClick(self):
         print("Select color")
         self.penColor = colorchooser.askcolor()[1]
+        self.penColorOld = colorchooser.askcolor()[1]
         self.deleteSelectionLinks()
 
     def widthClick(self, d):
@@ -408,8 +434,10 @@ class App:
         if self.tool == 1:
             self.poly = []
             self.f0.append(None)
-        elif self.tool == 8:            # select object
-            for fig in self.figures:
+            self.down_x = event.x
+            self.down_y = event.y
+        elif self.tool == 8:  # select object
+            for fig in reversed(self.figures):
                 print(fig)
                 if fig[1] != 'polyline':
                     x1, y1, x2, y2 = coords(self.canvas, fig[0])
@@ -427,12 +455,10 @@ class App:
                 else:
                     self.canvas.config(cursor="tcross")
 
-
             self.f0.append([])
         # repeat code
         fl = False
         # change cursor
-
 
     def resize_object(self, event):
         f = False
@@ -719,24 +745,26 @@ class App:
 
         elif self.tool == 8:
             f = False
+            # print("selFig", self.selFig)
             if self.flag == 0 or self.flag == 2:
                 f = self.resize_object(event)
             if not f and (self.flag == 0 or self.flag == 1 or self.flag == 3):
-                if self.selFig['Obj'][1] =='polyline':
-                    print(self.selFig['Obj'])
-                    x1, y1, x2, y2 = coords(self.canvas, self.selFig['Obj'][0])
-                    # x1, y1, x2, y2 = self.canvas.bbox(self.selFig['Obj'][0])
+                if self.selFig['Obj'] != None:
+                    if self.selFig['Obj'][1] == 'polyline':
+                        print(self.selFig['Obj'])
 
-                    if (event.x > x1) and (event.x < x2) and (event.y > y1) and (event.y < y2):
-                        # draging
-                        f = self.move_object(event)
-                else:
+                        x1, y1, x2, y2 = coords(self.canvas, self.selFig['Obj'][0])
+                        # x1, y1, x2, y2 = self.canvas.bbox(self.selFig['Obj'][0])
 
-                    x1, y1, x2, y2 = coords(self.canvas, self.selFig['Obj'][0])
-                    if (event.x > x1) and (event.x < x2) and (event.y > y1) and (event.y < y2):
-                        # draging
-                        f = self.move_object(event)
+                        if (event.x > x1) and (event.x < x2) and (event.y > y1) and (event.y < y2):
+                            # draging
+                            f = self.move_object(event)
+                    else:
 
+                        x1, y1, x2, y2 = coords(self.canvas, self.selFig['Obj'][0])
+                        if (event.x > x1) and (event.x < x2) and (event.y > y1) and (event.y < y2):
+                            # draging
+                            f = self.move_object(event)
 
         if self.tool != 8:  # Hide markers
             if self.selFig != {}:
@@ -775,16 +803,32 @@ class App:
 
         fl = False
         if self.tool == 1:
-            k = []
-            k.append(self.f0[-1])
-            k.append("polyline")
-            k.append(self.poly)
-            c = {}
-            c['fill'] = self.penColor
-            c['width'] = self.penWidth
-            c['outline'] = self.penColor
-            k.append(c)
-            self.figures.append(k)
+            if self.down_x == event.x and self.down_y == event.y:
+                k = []
+                r= self.penWidth
+                k.append(
+                    self.canvas.create_oval(event.x - r // 2, event.y - r // 2, event.x + r // 2, event.y + r // 2, fill=self.penColor,
+                                            width=self.penWidth, outline=self.penColor)
+                )
+                k.append("oval")
+                k.append(self.poly)
+                c = {}
+                c['fill'] = self.penColor
+                c['width'] = self.penWidth
+                c['outline'] = self.penColor
+                k.append(c)
+                self.figures.append(k)
+            else:
+                k = []
+                k.append(self.f0[-1])
+                k.append("polyline")
+                k.append(self.poly)
+                c = {}
+                c['fill'] = self.penColor
+                c['width'] = self.penWidth
+                c['outline'] = self.penColor
+                k.append(c)
+                self.figures.append(k)
         elif self.tool == 3 or self.tool == 4:
             k = []
             k.append(self.line0)
@@ -819,11 +863,9 @@ class App:
             self.selFig['Obj'][2]['width'] = width
             self.selFig['Obj'][2]['height'] = height
 
-
         self.xLineStart = 0
         self.yLineStart = 0
         self.flag = 0
-
 
     def btnScrInsertInCanvasClick(self, root, floatWindow):
         print('btnClick')
@@ -853,7 +895,6 @@ class App:
         k.append("image")
         k.append(c)
         self.figures.append(k)
-
 
         floatWindow.destroy()
 
@@ -934,9 +975,9 @@ class App:
                 p1 = fig[2].copy()
                 p2 = fig[2].copy()
                 p2.reverse()
-                p3 = p1+p2
-                fig[0] = self.canvas.create_polygon(p3, width=fig[3]['width'], fill=fig[3]['fill'], outline=fig[3]['outline'])
-
+                p3 = p1 + p2
+                fig[0] = self.canvas.create_polygon(p3, width=fig[3]['width'], fill=fig[3]['fill'],
+                                                    outline=fig[3]['outline'])
 
 
 if __name__ == '__main__':
