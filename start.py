@@ -1,6 +1,7 @@
 import numpy as np
 import math
 from tkinter import *
+from controllers import *
 from tkinter import colorchooser, LAST
 from datetime import datetime
 
@@ -275,8 +276,7 @@ class App:
     def btnAddPageClick(self, root):
         print('Add Page')
         self.deleteSelectionLinks()
-        print("selFig ->", self.selFig)
-        print("LEN ->", len(self.selFig))
+
 
     def btnLineClick(self):
         print('Line')
@@ -302,7 +302,6 @@ class App:
             else:
                 self.brushColor = self.penColor
                 self.btnRect.config(image=self.images_btn[4])
-        print('Pen')
         self.tool = 4
         self.noSelectAll()
         self.btnRect.config(bg=self.btnActiveColor)
@@ -411,24 +410,23 @@ class App:
             self.f0.append(None)
         elif self.tool == 8:            # select object
             for fig in self.figures:
-                print(self.figures)
-                print(fig[0])
-                try:
+                print(fig)
+                if fig[1] != 'polyline':
                     x1, y1, x2, y2 = coords(self.canvas, fig[0])
-                    if (event.x > x1) and (event.x < x2) and (event.y > y1) and (event.y < y2):
-                        self.canvas.config(cursor="fleur")
-                        if self.selFig != {}:
-                            self.canvas.coords(self.selFig['0'], x1 - 1, y1 - 1, x2 + 1, y2 + 1)
-                            self.canvas.coords(self.selFig['D'], x2 - 10, abs(y1 + y2) // 2 - 10, x2 + 10,
-                                               abs(y1 + y2) // 2 + 10)
-                            self.selFig['Obj'] = fig
-                        fl = True
-                        break
-                    else:
-                        self.canvas.config(cursor="tcross")
-                except:
-                    print("except")
-                    print("fig = ", fig)
+                else:
+                    x1, y1, x2, y2 = border_polyline(fig[2])
+                if (event.x > x1) and (event.x < x2) and (event.y > y1) and (event.y < y2):
+                    self.canvas.config(cursor="fleur")
+                    if self.selFig != {}:
+                        self.canvas.coords(self.selFig['0'], x1 - 1, y1 - 1, x2 + 1, y2 + 1)
+                        self.canvas.coords(self.selFig['D'], x2 - 10, abs(y1 + y2) // 2 - 10, x2 + 10,
+                                           abs(y1 + y2) // 2 + 10)
+                        self.selFig['Obj'] = fig
+                    fl = True
+                    break
+                else:
+                    self.canvas.config(cursor="tcross")
+
 
             self.f0.append([])
         # repeat code
@@ -581,27 +579,12 @@ class App:
                 for p in self.selFig['Obj'][2]:
                     poly2.append(Point(p.x + dx, p.y + dy))
                 self.selFig['Obj'][2] = poly2
-                # remove
-                # self.canvas.delete(self.selFig['Obj'][0])
-                # draw
-                p1 = self.self.selFig['Obj'][2].copy()
-                p2 = self.self.selFig['Obj'][2].copy()
-                p2.reverse()
-                p3 = p1 + p2
-                self.selFig['Obj'][0] = self.canvas.create_polygon(p3, fill=self.selFig['Obj'][3]['fill'],
-                                                                   width=self.selFig['Obj'][3]['width'],
-                                                                   outline=self.selFig['Obj'][3]['outline'])
-                print("%%% ", self.f0[-1])
-                # self.selFig['Obj'][2]['x'] = x + dx
-                # self.selFig['Obj'][2]['y'] = y + dy
-                # self.selFig['Obj'][2]['width'] = w
-                # self.selFig['Obj'][2]['height'] = h
-                # self.canvas.coords(self.selFig['Obj'][0], x + dx, y + dy)
-                # self.canvas.coords(self.selFig['0'],
-                #                    coords(self.canvas, self.selFig['Obj'][0]))
-                # x1, y1, x2, y2 = coords(self.canvas, self.selFig['Obj'][0])
-                # self.canvas.coords(self.selFig['D'], x2 - 10, abs(y1 + y2) // 2 - 10, x2 + 10,
-                #                    abs(y1 + y2) // 2 + 10)
+                self.canvas.move(self.selFig['Obj'][0], dx, dy)
+
+                x1, y1, x2, y2 = coords(self.canvas, self.selFig['Obj'][0])
+                self.canvas.coords(self.selFig['0'], x1, y1, x2, y2)
+                self.canvas.coords(self.selFig['D'], x2 - 10, abs(y1 + y2) // 2 - 10, x2 + 10,
+                                   abs(y1 + y2) // 2 + 10)
                 f = True
         return f
 
@@ -730,7 +713,7 @@ class App:
                 self.canvas.coords(self.line0, self.cLine0['x1'], self.cLine0['y1'], self.cLine0['x2'],
                                    self.cLine0['y2'],
                                    self.cLine0['x3'], self.cLine0['y3'], self.cLine0['x4'], self.cLine0['y4'])
-                print(self.canvas.coords(self.line0))
+
                 # x1, y1, x2, y2, x3, y3, x4, y4 = self.canvas.coords(self.line0)
                 # self.canvas.coords(self.line0, x1, y1, x2, y2, x3, y3, x4, y4)
 
@@ -739,13 +722,21 @@ class App:
             if self.flag == 0 or self.flag == 2:
                 f = self.resize_object(event)
             if not f and (self.flag == 0 or self.flag == 1 or self.flag == 3):
-                try:
+                if self.selFig['Obj'][1] =='polyline':
+                    print(self.selFig['Obj'])
+                    x1, y1, x2, y2 = coords(self.canvas, self.selFig['Obj'][0])
+                    # x1, y1, x2, y2 = self.canvas.bbox(self.selFig['Obj'][0])
+
+                    if (event.x > x1) and (event.x < x2) and (event.y > y1) and (event.y < y2):
+                        # draging
+                        f = self.move_object(event)
+                else:
+
                     x1, y1, x2, y2 = coords(self.canvas, self.selFig['Obj'][0])
                     if (event.x > x1) and (event.x < x2) and (event.y > y1) and (event.y < y2):
                         # draging
                         f = self.move_object(event)
-                except:
-                    pass
+
 
         if self.tool != 8:  # Hide markers
             if self.selFig != {}:
@@ -785,10 +776,8 @@ class App:
         fl = False
         if self.tool == 1:
             k = []
-
             k.append(self.f0[-1])
             k.append("polyline")
-
             k.append(self.poly)
             c = {}
             c['fill'] = self.penColor
@@ -796,7 +785,6 @@ class App:
             c['outline'] = self.penColor
             k.append(c)
             self.figures.append(k)
-            print(self.figures)
         elif self.tool == 3 or self.tool == 4:
             k = []
             k.append(self.line0)
@@ -806,8 +794,7 @@ class App:
                 k.append("rectangle")
             k.append(self.cLine0)
             self.figures.append(k)
-            print(self.figures)
-        print(self.selFig['D'])
+
         if coords(self.canvas, self.selFig['D']) != None:  # remove figure
             x1, y1, x2, y2 = coords(self.canvas, self.selFig['D'])
             if (event.x > x1) and (event.x < x2) and (event.y > y1) and (event.y < y2):
@@ -831,13 +818,12 @@ class App:
             self.selFig['Obj'][0] = self.canvas.create_image(x, y, image=self.images[-1], state=NORMAL, anchor=NW)
             self.selFig['Obj'][2]['width'] = width
             self.selFig['Obj'][2]['height'] = height
-            print(self.figures)
+
 
         self.xLineStart = 0
         self.yLineStart = 0
         self.flag = 0
-        print("figures->", self.figures)
-        print("Sel    ->", self.selFig)
+
 
     def btnScrInsertInCanvasClick(self, root, floatWindow):
         print('btnClick')
@@ -867,12 +853,11 @@ class App:
         k.append("image")
         k.append(c)
         self.figures.append(k)
-        print(self.images)
+
 
         floatWindow.destroy()
 
     def btnScrClick(self, root):
-        print("out-", self.figures)
         print('btnScrClick')
         root.wm_state('iconic')
         floatWindow = Tk()
@@ -946,23 +931,12 @@ class App:
                 self.images.append(ImageTk.PhotoImage(image))
                 fig[0] = self.canvas.create_image(f['x'], f['y'], image=self.images[-1], state=NORMAL, anchor=NW)
             elif fig[1] == 'polyline':
-                """
-                figures-> [[4499, 'polyline', [Point(x=84, y=259), Point(x=91, y=260), Point(x=99, y=264), Point(x=107, y=269), Point(x=136, y=284), Point(x=156, y=293), Point(x=166, y=298), Point(x=173, y=303), Point(x=178, y=306), Point(x=184, y=314), Point(x=192, y=324), Point(x=214, y=343), Point(x=226, y=354), Point(x=235, y=361), Point(x=241, y=369), Point(x=248, y=376), Point(x=254, y=387), Point(x=264, y=396), Point(x=276, y=406), Point(x=285, y=411), Point(x=294, y=416), Point(x=300, y=419), Point(x=304, y=421), Point(x=307, y=423), Point(x=309, y=423), Point(x=310, y=423), Point(x=311, y=423)], {'fill': '#0000FF', 'width': 2, 'outline': '#0000FF'}]]
-                Sel    -> {'0': 4471, 'D': 4472, 'Obj': None}
-
-                """
-                print("fig[2] ->", fig[2])
                 p1 = fig[2].copy()
                 p2 = fig[2].copy()
                 p2.reverse()
-                p3 = p1 + p2
-                # {'fill': '#0000FF', 'width': 2, 'outline': '#0000FF'}
-                fill = fig[3]['fill']
-                width = fig[3]['width']
-                outline = fig[3]['outline']
-                print("p3    ->", p3)
-                self.f0.append(self.canvas.create_polygon(p3, fill=fill, width=width,
-                                                          outline=outline))
+                p3 = p1+p2
+                fig[0] = self.canvas.create_polygon(p3, width=fig[3]['width'], fill=fig[3]['fill'], outline=fig[3]['outline'])
+
 
 
 if __name__ == '__main__':

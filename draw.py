@@ -111,9 +111,7 @@ def _penMove(self, x, y):
 
 def penMove(self, x, y):
     if self.xStart == 0 and self.yStart == 0:
-        # self.f0 = self.canvas.create_polygon(Point(x, y), fill=self.penColor, width=self.penWidth,
-        #                                      outline=self.penColor)
-        pass
+         pass
     else:
         # [[4471, 'line', {'x1': 166, 'y1': 269, 'x2': 242, 'y2': 334, 'width': 2, 'fill': '#0000FF', 'arrow': '', 'dash': ''}],
         #  [4472, 'rectangle', {'x1': 174, 'y1': 361, 'x2': 273, 'y2': 361, 'x3': 273, 'y3': 433, 'x4': 174, 'y4': 433, 'width': 2,       'outline': '#0000FF', 'fill': ''}], {}]
@@ -123,7 +121,6 @@ def penMove(self, x, y):
         p2 = self.poly.copy()
         p2.reverse()
         p3 = p1 + p2
-
         deleteObject(self.canvas, self.f0[-1])
         self.f0[-1] = self.canvas.create_polygon(p3, fill=self.penColor, width=self.penWidth,
                                              outline=self.penColor)
