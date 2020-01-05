@@ -13,3 +13,6 @@ https://www.opennet.ru/docs/RUS/tcltk/tk.html#%D0%9E%D0%91%D0%97%D0%9E%D0%A0%20%
 
 Опис параметрів для видоду вікна
 https://stackoverflow.com/questions/33286544/how-do-i-use-wm-attributes-for-tkinter
+
+Архіви
+https://www.geeksforgeeks.org/working-zip-files-python/

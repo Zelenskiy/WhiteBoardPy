@@ -8,8 +8,8 @@ from datetime import datetime
 import pyautogui
 from PIL import ImageTk, Image
 import pickle
-import imutils
-import cv2
+# import imutils
+# import cv2
 
 from draw import *
 
@@ -121,7 +121,7 @@ class App:
         self.images = []
 
         grid(self)
-        # Кнопки розширення полотна
+        # Buttons expanding canvas
         self.btnDown = Button(text='V', width=4, height=2, command=lambda d='u': self.expanse(d))
         self.btnRight = Button(text='>', width=4, height=2, command=lambda d='r': self.expanse(d))
 
@@ -131,7 +131,7 @@ class App:
         self.frame1 = Frame(self.frame, relief=RAISED, borderwidth=1)
         self.frame1.pack(side=BOTTOM, fill=BOTH)
         images_path = {
-            0: "img/pen.png", 1: "img/err.gif", 2: "img/hand.png", 3: "img/line.png", 4: "img/ClearFill.png",
+            0: "img/pen.png", 1: "img/err.png", 2: "img/hand.png", 3: "img/line.png", 4: "img/ClearFill.png",
             5: "img/_ClearFill.png", 6: "img/palitra.png", 7: "img/width.png", 8: "img/line 2px.png",
             9: "img/line 4px.png", 10: "img/line 8px.png", 11: "img/line 12px.png", 12: "img/line 16px.png",
             13: "img/line 20px.png", 14: "img/line 24px.png", 15: "img/arr.png", 16: "img/line 2px.png",
@@ -235,14 +235,25 @@ class App:
                                 command=lambda d=(10, 2): self.dotClick(d),
                                 font="10")
         self.btnArrow3.pack(side=LEFT, padx=2, pady=2)
+
+        # ================= Options =======================
+        self.gr = IntVar()
+        self.gr.set(1)
+        self.full_screen = IntVar()
+        self.full_screen.set(1)
+
         self.frameOptions = Frame(self.frame1)
         self.frameOptions.pack_forget()
-        self.chbGrid = Checkbutton(self.frameOptions, text='grid')
+        self.chbGrid = Checkbutton(self.frameOptions, text='grid', variable=self.gr, command=self.grid_hide)
         self.chbGrid.pack(side=LEFT, padx=2, pady=2)
+        self.chbFullScreen = Checkbutton(self.frameOptions, text='full', variable=self.full_screen,
+                                         command=lambda master=master: self.full_screenClick(master))
+        self.chbFullScreen.pack(side=LEFT, padx=2, pady=2)
+        # ================= End Options =======================
 
-        self.btnPen.config(bg=self.btnActiveColor)
 
-        self.makeSelFig(10000, 10000, 10001, 10001, None)
+
+
 
         master.bind("<Key>", self.key_press)
         self.canvas.bind("<Button-1>", lambda event: self.mouseDown(event))
@@ -252,8 +263,33 @@ class App:
         self.canvas.bind("<ButtonRelease-1>", lambda event: self.mouseUp(event))
         master.bind('<Configure>', lambda event, root=master: self.on_move_or_resize(event, root))
 
-        self.color = "blue"
+        # self.color = "blue"
         # TODO check directories tmp and lessons. If no - create them
+
+        #================= start settings =====================
+        self.btnPen.config(bg=self.btnActiveColor)
+        self.makeSelFig(10000, 10000, 10001, 10001, None)
+        self.full_screenClick(master)
+        self.grid_hide()
+
+        #======================================================
+
+
+    def grid_hide(self):
+        if self.gr.get() == 1:
+            grid(self)
+        else:
+            for l in self.grList:
+                deleteObject(self.canvas, l)
+        self.frameOptions.pack_forget()
+
+    def full_screenClick(self, master):
+        print(self.full_screen.get())
+        if self.full_screen.get() == 1:
+            master.wm_attributes("-fullscreen", "true")
+        else:
+            master.wm_attributes("-fullscreen", "false")
+        self.frameOptions.pack_forget()
 
     def makeSelFig(self, x1, y1, x2, y2, Obj):
         self.selFig['0'] = self.canvas.create_rectangle(x1 - 1, y1 - 1, x2 + 1, y2 + 1, width=1,
@@ -312,7 +348,6 @@ class App:
         self.noSelectAll()
         self.btnErFon.config(bg=self.btnActiveColor)
         self.deleteSelectionLinks()
-
 
     def btnRectClick(self):
         print('Rect')
@@ -805,9 +840,10 @@ class App:
         if self.tool == 1:
             if self.down_x == event.x and self.down_y == event.y:
                 k = []
-                r= self.penWidth
+                r = self.penWidth
                 k.append(
-                    self.canvas.create_oval(event.x - r // 2, event.y - r // 2, event.x + r // 2, event.y + r // 2, fill=self.penColor,
+                    self.canvas.create_oval(event.x - r // 2, event.y - r // 2, event.x + r // 2, event.y + r // 2,
+                                            fill=self.penColor,
                                             width=self.penWidth, outline=self.penColor)
                 )
                 k.append("oval")
@@ -984,5 +1020,8 @@ class App:
 if __name__ == '__main__':
     root = Tk()
     # root.wm_attributes("-fullscreen", "true")
+
     app = App(root)
+
+
     root.mainloop()
