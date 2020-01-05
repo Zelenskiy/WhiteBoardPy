@@ -122,12 +122,12 @@ class App:
 
         grid(self)
         # Кнопки розширення полотна
-        self.btnDown = Button(text='V', width=4, height=1, command=lambda d='u': self.expanse(d))
-        self.btnRight = Button(text='>', width=2, height=2, command=lambda d='r': self.expanse(d))
+        self.btnDown = Button(text='V', width=4, height=2, command=lambda d='u': self.expanse(d))
+        self.btnRight = Button(text='>', width=4, height=2, command=lambda d='r': self.expanse(d))
 
-        self.btnDown.place(x=self.screen_width // 2, y=self.screen_height - 60)
-        self.btnRight.place(x=self.screen_width - 25, y=self.screen_height // 2)
-
+        self.btnDown.place(x=self.screen_width // 2, y=self.screen_height - 80)
+        # self.btnRight.place(x=self.screen_width - 95, y=self.screen_height // 2)
+        self.btnRight.place(anchor='e')
         self.frame1 = Frame(self.frame, relief=RAISED, borderwidth=1)
         self.frame1.pack(side=BOTTOM, fill=BOTH)
         images_path = {
@@ -270,8 +270,8 @@ class App:
         w = master.winfo_width()
         h = master.winfo_height()
         self.window_width, self.window_height = w, h
-        self.btnDown.place(x=w // 2, y=h - 60)
-        self.btnRight.place(x=w - 25, y=h // 2)
+        self.btnDown.place(x=w // 2, y=h - 85)
+        self.btnRight.place(x=w - 20, y=h // 2)
 
     def btnHandClick(self):
         print('Hand')
@@ -302,7 +302,7 @@ class App:
 
     def btnErFonClick(self):
         print("draw background color")
-        #TODO
+
         self.tool = 1
         self.penWidthOld = self.penWidth
         self.penColorOld = self.penColor
@@ -596,7 +596,7 @@ class App:
                                    abs(y1 + y2) // 2 + 10)
                 f = True
             elif self.selFig['Obj'][1] == 'polyline':
-                # TODO no order
+
                 self.flag = 3
                 # x1,y1,x2,y2 = self.canvas.coords(self.selFig['Obj'][0])
                 dx = event.x - self.xStart
@@ -869,7 +869,7 @@ class App:
 
     def btnScrInsertInCanvasClick(self, root, floatWindow):
         print('btnClick')
-
+        floatWindow.wm_attributes("-alpha", "0.0")
         width = 600
         self.window_width = root.winfo_width()
         self.window_height = root.winfo_height()
@@ -908,6 +908,7 @@ class App:
                                           root, floatWindow))
         floatWindow.overrideredirect(1)
         floatWindow.wm_attributes("-topmost", True)
+        floatWindow.wm_attributes("-alpha", "0.5")
         btnScrInsertInCanvas.pack(fill=BOTH, expand=True)
         self.btnPenClick()
 
@@ -982,5 +983,6 @@ class App:
 
 if __name__ == '__main__':
     root = Tk()
+    # root.wm_attributes("-fullscreen", "true")
     app = App(root)
     root.mainloop()
