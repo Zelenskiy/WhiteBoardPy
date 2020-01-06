@@ -1,7 +1,7 @@
 # import numpy as np
 import math
 from tkinter import *
-from controllers import *
+# from controllers import *
 from tkinter import colorchooser, LAST
 from datetime import datetime
 
@@ -48,6 +48,27 @@ elif platform == "linux":
     VK_RETURN = 0x24  # RETURN key
     VK_ESCAPE = 0x09  # ESC key
 
+from draw import *
+
+def border_polyline(points):
+    print(points)
+    if points == []:
+        return 0,0,0,0
+    x_min = points[0].x
+    y_min = points[0].y
+    x_max = points[0].x
+    y_max = points[0].y
+    for p in points:
+        if p.x > x_max:
+            x_max = p.x
+        if p.y > y_max:
+            y_max = p.y
+        if p.x < x_min:
+            x_min = p.x
+        if p.y < y_min:
+            y_min = p.y
+
+    return x_min, y_min, x_max, y_max
 
 class App:
     def expanse(self, d):
@@ -240,7 +261,7 @@ class App:
         self.gr = IntVar()
         self.gr.set(1)
         self.full_screen = IntVar()
-        self.full_screen.set(1)
+        self.full_screen.set(0)
 
         self.frameOptions = Frame(self.frame1)
         self.frameOptions.pack_forget()
@@ -258,8 +279,7 @@ class App:
         master.bind("<Key>", self.key_press)
         self.canvas.bind("<Button-1>", lambda event: self.mouseDown(event))
         self.canvas.bind("<B1-Motion>", lambda event: self.mouseMove(event))
-        self.canvas.bind("<Motion>", lambda event: self.mouseMoveNoButton(event))
-        # lambda event, b="white": change_bg(event, b)
+        # self.canvas.bind("<Motion>", lambda event: self.mouseMoveNoButton(event))
         self.canvas.bind("<ButtonRelease-1>", lambda event: self.mouseUp(event))
         master.bind('<Configure>', lambda event, root=master: self.on_move_or_resize(event, root))
 
@@ -467,8 +487,20 @@ class App:
 
     def mouseDown(self, event):
         if self.tool == 1:
+            #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             self.poly = []
-            self.f0.append(None)
+            self.f0 = []
+            self.f0.append([])
+            self.down_x = event.x
+            self.down_y = event.y
+            self.poly.append(Point(event.x, event.y))
+            #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+            # self.poly = []
+            # self.f0.append(None)
+            # self.down_x = event.x
+            # self.down_y = event.y
+        elif self.tool == 3:
             self.down_x = event.x
             self.down_y = event.y
         elif self.tool == 8:  # select object
@@ -495,6 +527,267 @@ class App:
         fl = False
         # change cursor
 
+    def mouseMove(self, event):
+        # xx = ""
+        # if self.xStart == 0 and self.yStart == 0 and self.tool != 3 and self.tool != 4:
+        #     self.xStart = event.x
+        #     self.yStart = event.y
+
+        if self.tool == 1:
+            #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            self.poly.append(Point(event.x, event.y))
+
+            self.f0.append(self.canvas.create_line(self.down_x, self.down_y, event.x, event.y, fill="blue", width=2))
+            self.down_x = event.x
+            self.down_y = event.y
+            #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            if self.selFig != {}:
+                self.canvas.coords(self.selFig, 100000, 100000, 1000001, 100001)
+            # self.poly.append(Point(event.x, event.y))
+            #
+            # self.f0 = self.canvas.create_line(self.poly, fill=self.penColor, width=self.penWidth)
+
+        elif self.tool == 2:
+            erMove(self, event.x, event.y)
+        elif self.tool == 7:
+            dx = event.x - self.xStart
+            dy = event.y - self.yStart
+            self.xc += dx
+            if self.xc > 0:
+                self.xc -= dx
+            self.yc += dy
+            if self.yc > 0:
+                self.yc -= dy
+            self.canvas.place(x=self.xc, y=self.yc)
+            if self.xc + (0) > 0:
+                pass
+        #     TODO make for expanding if drag canvas out borger
+
+        elif self.tool == 3:
+            # line
+            # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            self.poly.append(Point(event.x, event.y))
+            for l in self.f0:
+                deleteObject(self.canvas, l)
+            self.f0.append(self.canvas.create_line(self.down_x, self.down_y, event.x, event.y, fill="blue", width=2))
+
+            # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+            # if self.xStart == 0 and self.yStart == 0:
+            #     self.xLineStart = event.x
+            #     self.yLineStart = event.y
+            #     self.line0 = self.canvas.create_line(self.xLineStart, self.yLineStart,
+            #                                          self.xLineStart,
+            #                                          self.yLineStart, width=self.penWidth,
+            #                                          fill=self.penColor, arrow=self.lineArrow,
+            #                                          dash=self.lineDot)
+            #     self.cLine0 = {}
+            #     self.cLine0['x1'] = self.xLineStart
+            #     self.cLine0['y1'] = self.yLineStart
+            #     self.cLine0['x2'] = self.xLineStart
+            #     self.cLine0['y2'] = self.yLineStart
+            #     self.cLine0['width'] = self.penWidth
+            #     self.cLine0['fill'] = self.penColor
+            #     self.cLine0['arrow'] = self.lineArrow
+            #     self.cLine0['dash'] = self.lineDot
+            #
+            # else:
+            #     self.canvas.coords(self.line0, self.xLineStart, self.yLineStart, event.x, event.y)
+            #     self.cLine0['x1'] = self.xLineStart
+            #     self.cLine0['y1'] = self.yLineStart
+            #     self.cLine0['x2'] = event.x
+            #     self.cLine0['y2'] = event.y
+            #
+        elif self.tool == 4:
+            # draw rectangle
+            if self.xStart == 0 and self.yStart == 0:
+                self.xLineStart = event.x
+                self.yLineStart = event.y
+                self.line0 = self.canvas.create_polygon([self.xLineStart, self.yLineStart],
+                                                        [self.xLineStart, self.yLineStart],
+                                                        [self.xLineStart, self.yLineStart],
+                                                        [self.xLineStart, self.yLineStart],
+                                                        width=self.penWidth, outline=self.penColor,
+                                                        fill=self.brushColor)
+                self.cLine0 = {}
+            else:
+                # self.canvas.coords(self.line0, self.xLineStart, self.yLineStart,
+                #                    self.xLineStart,
+                #                    event.y, event.x, event.y, event.x, self.yLineStart)
+                self.cLine0 = {}
+                x1 = self.xLineStart
+                y1 = self.yLineStart
+                x2 = event.x
+                y2 = self.yLineStart
+                x3 = event.x
+                y3 = event.y
+                x4 = self.xLineStart
+                y4 = event.y
+                if x1 < x3 and y3 > y1:
+                    self.cLine0['x1'] = x1
+                    self.cLine0['y1'] = y1
+                    self.cLine0['x2'] = x2
+                    self.cLine0['y2'] = y2
+                    self.cLine0['x3'] = x3
+                    self.cLine0['y3'] = y3
+                    self.cLine0['x4'] = x4
+                    self.cLine0['y4'] = y4
+                elif x3 < x1 and y3 > y1:
+                    self.cLine0['x1'] = x2
+                    self.cLine0['y1'] = y2
+                    self.cLine0['x2'] = x3
+                    self.cLine0['y2'] = y3
+                    self.cLine0['x3'] = x4
+                    self.cLine0['y3'] = y4
+                    self.cLine0['x4'] = x1
+                    self.cLine0['y4'] = y1
+                    # x4, x1, x2, x3 = x1, x2, x3, x4
+                    # y4, y1, y2, y3 = y1, y2, y3, y4
+                elif x3 < x1 and y1 > y3:
+                    self.cLine0['x1'] = x3
+                    self.cLine0['y1'] = y3
+                    self.cLine0['x2'] = x4
+                    self.cLine0['y2'] = y4
+                    self.cLine0['x3'] = x1
+                    self.cLine0['y3'] = y1
+                    self.cLine0['x4'] = x2
+                    self.cLine0['y4'] = y2
+                    # x3, x4, x1, x2 = x1, x2, x3, x4
+                    # y3, y4, y1, y2 = y1, y2, y3, y4
+                elif x1 < x3 and y1 > y3:
+                    self.cLine0['x1'] = x4
+                    self.cLine0['y1'] = y4
+                    self.cLine0['x2'] = x1
+                    self.cLine0['y2'] = y1
+                    self.cLine0['x3'] = x2
+                    self.cLine0['y3'] = y2
+                    self.cLine0['x4'] = x3
+                    self.cLine0['y4'] = y3
+                    # x2, x3, x4, x1, = x1, x2, x3, x4
+                    # y2, y3, y4, y1, = y1, y2, y3, y4
+                self.cLine0['width'] = self.penWidth
+                self.cLine0['outline'] = self.penColor
+                self.cLine0['fill'] = self.brushColor
+                self.canvas.coords(self.line0, self.cLine0['x1'], self.cLine0['y1'], self.cLine0['x2'],
+                                   self.cLine0['y2'],
+                                   self.cLine0['x3'], self.cLine0['y3'], self.cLine0['x4'], self.cLine0['y4'])
+
+                # x1, y1, x2, y2, x3, y3, x4, y4 = self.canvas.coords(self.line0)
+                # self.canvas.coords(self.line0, x1, y1, x2, y2, x3, y3, x4, y4)
+
+        elif self.tool == 8:
+            f = False
+            # print("selFig", self.selFig)
+            if self.flag == 0 or self.flag == 2:
+                f = self.resize_object(event)
+            if not f and (self.flag == 0 or self.flag == 1 or self.flag == 3):
+                if self.selFig['Obj'] != None:
+                    if self.selFig['Obj'][1] == 'polyline':
+                        print(self.selFig['Obj'])
+
+                        x1, y1, x2, y2 = coords(self.canvas, self.selFig['Obj'][0])
+                        # x1, y1, x2, y2 = self.canvas.bbox(self.selFig['Obj'][0])
+
+                        if (event.x > x1) and (event.x < x2) and (event.y > y1) and (event.y < y2):
+                            # draging
+                            f = self.move_object(event)
+                    else:
+
+                        x1, y1, x2, y2 = coords(self.canvas, self.selFig['Obj'][0])
+                        if (event.x > x1) and (event.x < x2) and (event.y > y1) and (event.y < y2):
+                            # draging
+                            f = self.move_object(event)
+
+        # if self.tool != 8:  # Hide markers
+        #     if self.selFig != {}:
+        #         self.canvas.coords(self.selFig, 100000, 100000, 1000001, 100001)
+            # selFig = {}
+
+        # self.xStart = event.x
+        # self.yStart = event.y
+
+
+    def mouseUp(self, event):
+
+        self.xStart = 0
+        self.yStart = 0
+
+        fl = False
+        if self.tool == 1:
+            if self.xStart == event.x and self.yStart == event.y:
+                pass
+                k = []
+                # r = self.penWidth
+                # k.append(
+                #     self.canvas.create_oval(event.x - r // 2, event.y - r // 2, event.x + r // 2, event.y + r // 2,
+                #                             fill=self.penColor,
+                #                             width=self.penWidth, outline=self.penColor)
+                # )
+                # k.append("oval")
+                # k.append(self.poly)
+                # c = {}
+                # c['fill'] = self.penColor
+                # c['width'] = self.penWidth
+                # c['outline'] = self.penColor
+                # k.append(c)
+                # self.figures.append(k)
+            else:
+                #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                self.xStart = 0
+                self.yStart = 0
+                for l in self.f0:
+                    deleteObject(self.canvas, l)
+                self.f0.clear()
+
+                self.f0.append(self.canvas.create_line(self.poly, fill="blue", width=2))
+                #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                k = []
+                k.append(self.f0)
+                k.append("polyline")
+                k.append(self.poly)
+                c = {}
+                c['fill'] = self.penColor
+                c['width'] = self.penWidth
+                c['outline'] = self.penColor
+                k.append(c)
+                self.figures.append(k)
+        elif self.tool == 3 or self.tool == 4:
+            k = []
+            k.append(self.line0)
+            if self.tool == 3:
+                k.append("line")
+            else:
+                k.append("rectangle")
+            k.append(self.cLine0)
+            self.figures.append(k)
+
+        if coords(self.canvas, self.selFig['D']) != None:  # remove figure
+            x1, y1, x2, y2 = coords(self.canvas, self.selFig['D'])
+            if (event.x > x1) and (event.x < x2) and (event.y > y1) and (event.y < y2):
+                self.canvas.delete(self.selFig['Obj'][0])
+
+                self.canvas.coords(self.selFig['0'], 10000, 10000, 10001, 10001)
+                self.canvas.coords(self.selFig['D'], 10000, 10000, 10001, 10001)
+                self.figures.remove(self.selFig['Obj'])
+                # self.selFig = {}
+
+        if self.tool == 8 and self.flag == 2 and self.selFig['Obj'][1] == 'image':
+            print("resizing")
+            x, y, xo2, yo2 = coords(self.canvas, self.selFig['0'])
+            width = xo2 - x
+            height = yo2 - y
+            name = self.selFig['Obj'][2]['name']
+            deleteObject(self.canvas, self.selFig['Obj'][0])
+            image = Image.open(name)
+            image = image.resize((width, height), Image.ANTIALIAS)
+            self.images.append(ImageTk.PhotoImage(image))
+            self.selFig['Obj'][0] = self.canvas.create_image(x, y, image=self.images[-1], state=NORMAL, anchor=NW)
+            self.selFig['Obj'][2]['width'] = width
+            self.selFig['Obj'][2]['height'] = height
+
+        self.xLineStart = 0
+        self.yLineStart = 0
+        self.flag = 0
     def resize_object(self, event):
         f = False
         if self.selFig['0'] != None and self.selFig['Obj'] != None:
@@ -649,166 +942,6 @@ class App:
                 f = True
         return f
 
-    def mouseMove(self, event):
-        xx = ""
-        if self.xStart == 0 and self.yStart == 0 and self.tool != 3 and self.tool != 4:
-            self.xStart = event.x
-            self.yStart = event.y
-
-        if self.tool == 1:
-            penMove(self, event.x, event.y)
-
-        elif self.tool == 2:
-            erMove(self, event.x, event.y)
-        elif self.tool == 7:
-            dx = event.x - self.xStart
-            dy = event.y - self.yStart
-            self.xc += dx
-            if self.xc > 0:
-                self.xc -= dx
-            self.yc += dy
-            if self.yc > 0:
-                self.yc -= dy
-            self.canvas.place(x=self.xc, y=self.yc)
-            if self.xc + (0) > 0:
-                pass
-        #     TODO make for expanding if drag canvas out borger
-
-        elif self.tool == 3:
-            # line
-            if self.xStart == 0 and self.yStart == 0:
-                self.xLineStart = event.x
-                self.yLineStart = event.y
-                self.line0 = self.canvas.create_line(self.xLineStart, self.yLineStart,
-                                                     self.xLineStart,
-                                                     self.yLineStart, width=self.penWidth,
-                                                     fill=self.penColor, arrow=self.lineArrow,
-                                                     dash=self.lineDot)
-                self.cLine0 = {}
-                self.cLine0['x1'] = self.xLineStart
-                self.cLine0['y1'] = self.yLineStart
-                self.cLine0['x2'] = self.xLineStart
-                self.cLine0['y2'] = self.yLineStart
-                self.cLine0['width'] = self.penWidth
-                self.cLine0['fill'] = self.penColor
-                self.cLine0['arrow'] = self.lineArrow
-                self.cLine0['dash'] = self.lineDot
-
-            else:
-                self.canvas.coords(self.line0, self.xLineStart, self.yLineStart, event.x, event.y)
-                self.cLine0['x1'] = self.xLineStart
-                self.cLine0['y1'] = self.yLineStart
-                self.cLine0['x2'] = event.x
-                self.cLine0['y2'] = event.y
-
-        elif self.tool == 4:
-            # draw rectangle
-            if self.xStart == 0 and self.yStart == 0:
-                self.xLineStart = event.x
-                self.yLineStart = event.y
-                self.line0 = self.canvas.create_polygon([self.xLineStart, self.yLineStart],
-                                                        [self.xLineStart, self.yLineStart],
-                                                        [self.xLineStart, self.yLineStart],
-                                                        [self.xLineStart, self.yLineStart],
-                                                        width=self.penWidth, outline=self.penColor,
-                                                        fill=self.brushColor)
-                self.cLine0 = {}
-            else:
-                # self.canvas.coords(self.line0, self.xLineStart, self.yLineStart,
-                #                    self.xLineStart,
-                #                    event.y, event.x, event.y, event.x, self.yLineStart)
-                self.cLine0 = {}
-                x1 = self.xLineStart
-                y1 = self.yLineStart
-                x2 = event.x
-                y2 = self.yLineStart
-                x3 = event.x
-                y3 = event.y
-                x4 = self.xLineStart
-                y4 = event.y
-                if x1 < x3 and y3 > y1:
-                    self.cLine0['x1'] = x1
-                    self.cLine0['y1'] = y1
-                    self.cLine0['x2'] = x2
-                    self.cLine0['y2'] = y2
-                    self.cLine0['x3'] = x3
-                    self.cLine0['y3'] = y3
-                    self.cLine0['x4'] = x4
-                    self.cLine0['y4'] = y4
-                elif x3 < x1 and y3 > y1:
-                    self.cLine0['x1'] = x2
-                    self.cLine0['y1'] = y2
-                    self.cLine0['x2'] = x3
-                    self.cLine0['y2'] = y3
-                    self.cLine0['x3'] = x4
-                    self.cLine0['y3'] = y4
-                    self.cLine0['x4'] = x1
-                    self.cLine0['y4'] = y1
-                    # x4, x1, x2, x3 = x1, x2, x3, x4
-                    # y4, y1, y2, y3 = y1, y2, y3, y4
-                elif x3 < x1 and y1 > y3:
-                    self.cLine0['x1'] = x3
-                    self.cLine0['y1'] = y3
-                    self.cLine0['x2'] = x4
-                    self.cLine0['y2'] = y4
-                    self.cLine0['x3'] = x1
-                    self.cLine0['y3'] = y1
-                    self.cLine0['x4'] = x2
-                    self.cLine0['y4'] = y2
-                    # x3, x4, x1, x2 = x1, x2, x3, x4
-                    # y3, y4, y1, y2 = y1, y2, y3, y4
-                elif x1 < x3 and y1 > y3:
-                    self.cLine0['x1'] = x4
-                    self.cLine0['y1'] = y4
-                    self.cLine0['x2'] = x1
-                    self.cLine0['y2'] = y1
-                    self.cLine0['x3'] = x2
-                    self.cLine0['y3'] = y2
-                    self.cLine0['x4'] = x3
-                    self.cLine0['y4'] = y3
-                    # x2, x3, x4, x1, = x1, x2, x3, x4
-                    # y2, y3, y4, y1, = y1, y2, y3, y4
-                self.cLine0['width'] = self.penWidth
-                self.cLine0['outline'] = self.penColor
-                self.cLine0['fill'] = self.brushColor
-                self.canvas.coords(self.line0, self.cLine0['x1'], self.cLine0['y1'], self.cLine0['x2'],
-                                   self.cLine0['y2'],
-                                   self.cLine0['x3'], self.cLine0['y3'], self.cLine0['x4'], self.cLine0['y4'])
-
-                # x1, y1, x2, y2, x3, y3, x4, y4 = self.canvas.coords(self.line0)
-                # self.canvas.coords(self.line0, x1, y1, x2, y2, x3, y3, x4, y4)
-
-        elif self.tool == 8:
-            f = False
-            # print("selFig", self.selFig)
-            if self.flag == 0 or self.flag == 2:
-                f = self.resize_object(event)
-            if not f and (self.flag == 0 or self.flag == 1 or self.flag == 3):
-                if self.selFig['Obj'] != None:
-                    if self.selFig['Obj'][1] == 'polyline':
-                        print(self.selFig['Obj'])
-
-                        x1, y1, x2, y2 = coords(self.canvas, self.selFig['Obj'][0])
-                        # x1, y1, x2, y2 = self.canvas.bbox(self.selFig['Obj'][0])
-
-                        if (event.x > x1) and (event.x < x2) and (event.y > y1) and (event.y < y2):
-                            # draging
-                            f = self.move_object(event)
-                    else:
-
-                        x1, y1, x2, y2 = coords(self.canvas, self.selFig['Obj'][0])
-                        if (event.x > x1) and (event.x < x2) and (event.y > y1) and (event.y < y2):
-                            # draging
-                            f = self.move_object(event)
-
-        if self.tool != 8:  # Hide markers
-            if self.selFig != {}:
-                self.canvas.coords(self.selFig, 100000, 100000, 1000001, 100001)
-            # selFig = {}
-
-        self.xStart = event.x
-        self.yStart = event.y
-
     def mouseMoveNoButton(self, event):
         if self.tool == 8:
             # change cursor
@@ -830,78 +963,6 @@ class App:
                 pass
         else:
             self.canvas.config(cursor="tcross")
-
-    def mouseUp(self, event):
-
-        self.xStart = 0
-        self.yStart = 0
-
-        fl = False
-        if self.tool == 1:
-            if self.down_x == event.x and self.down_y == event.y:
-                k = []
-                r = self.penWidth
-                k.append(
-                    self.canvas.create_oval(event.x - r // 2, event.y - r // 2, event.x + r // 2, event.y + r // 2,
-                                            fill=self.penColor,
-                                            width=self.penWidth, outline=self.penColor)
-                )
-                k.append("oval")
-                k.append(self.poly)
-                c = {}
-                c['fill'] = self.penColor
-                c['width'] = self.penWidth
-                c['outline'] = self.penColor
-                k.append(c)
-                self.figures.append(k)
-            else:
-                k = []
-                k.append(self.f0[-1])
-                k.append("polyline")
-                k.append(self.poly)
-                c = {}
-                c['fill'] = self.penColor
-                c['width'] = self.penWidth
-                c['outline'] = self.penColor
-                k.append(c)
-                self.figures.append(k)
-        elif self.tool == 3 or self.tool == 4:
-            k = []
-            k.append(self.line0)
-            if self.tool == 3:
-                k.append("line")
-            else:
-                k.append("rectangle")
-            k.append(self.cLine0)
-            self.figures.append(k)
-
-        if coords(self.canvas, self.selFig['D']) != None:  # remove figure
-            x1, y1, x2, y2 = coords(self.canvas, self.selFig['D'])
-            if (event.x > x1) and (event.x < x2) and (event.y > y1) and (event.y < y2):
-                self.canvas.delete(self.selFig['Obj'][0])
-
-                self.canvas.coords(self.selFig['0'], 10000, 10000, 10001, 10001)
-                self.canvas.coords(self.selFig['D'], 10000, 10000, 10001, 10001)
-                self.figures.remove(self.selFig['Obj'])
-                # self.selFig = {}
-
-        if self.tool == 8 and self.flag == 2 and self.selFig['Obj'][1] == 'image':
-            print("resizing")
-            x, y, xo2, yo2 = coords(self.canvas, self.selFig['0'])
-            width = xo2 - x
-            height = yo2 - y
-            name = self.selFig['Obj'][2]['name']
-            deleteObject(self.canvas, self.selFig['Obj'][0])
-            image = Image.open(name)
-            image = image.resize((width, height), Image.ANTIALIAS)
-            self.images.append(ImageTk.PhotoImage(image))
-            self.selFig['Obj'][0] = self.canvas.create_image(x, y, image=self.images[-1], state=NORMAL, anchor=NW)
-            self.selFig['Obj'][2]['width'] = width
-            self.selFig['Obj'][2]['height'] = height
-
-        self.xLineStart = 0
-        self.yLineStart = 0
-        self.flag = 0
 
     def btnScrInsertInCanvasClick(self, root, floatWindow):
         print('btnClick')
